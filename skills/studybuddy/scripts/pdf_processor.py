@@ -1,11 +1,16 @@
 import os
 import sys
 from datetime import datetime
-from PIL import Image
 
-MAX_SIZE_MB = 2
+try:
+    import pymupdf4llm
+except ImportError:
+    print('Error: pymupdf4llm is not installed. Please install it with "pip install pymupdf4llm".', file=sys.stderr)
+    sys.exit(1)
+
+MAX_SIZE_MB = 50
 MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
-SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp')
+SUPPORTED_EXTENSIONS = ('.pdf',)
 
 def get_data_dir():
     data_dir = os.environ.get('STUDYBUDDY_DATA_DIR')
@@ -24,35 +29,6 @@ def get_raw_dir(year=None, month=None):
     os.makedirs(raw_dir, exist_ok=True)
     return raw_dir
 
-def compress_image(src_path, target_path, max_bytes=MAX_SIZE_BYTES):
-    with Image.open(src_path) as img:
-        img_format = img.format or 'JPEG'
-        if img_format == 'PNG' and img.mode == 'RGBA':
-            img_format = 'PNG'
-        else:
-            img_format = 'JPEG'
-            if img.mode != 'RGB':
-                img = img.convert('RGB')
-        
-        width, height = img.size
-        quality = 95
-        
-        while True:
-            temp_path = target_path + '.tmp'
-            img.save(temp_path, format=img_format, quality=quality, optimize=True)
-            
-            if os.path.getsize(temp_path) <= max_bytes or quality <= 10:
-                os.replace(temp_path, target_path)
-                break
-            
-            quality -= 5
-            if width > 2048 or height > 2048:
-                width = int(width * 0.9)
-                height = int(height * 0.9)
-                img = img.resize((width, height), Image.Resampling.LANCZOS)
-    
-    return target_path
-
 def get_unique_filename(raw_dir, original_filename):
     base_name, file_ext = os.path.splitext(original_filename)
     target_path = os.path.join(raw_dir, original_filename)
@@ -68,7 +44,18 @@ def get_unique_filename(raw_dir, original_filename):
             return new_filename
         counter += 1
 
-def process_image(filepath):
+def extract_pdf_text(filepath):
+    try:
+        md_text = pymupdf4llm.to_markdown(filepath, header=False, footer=False)
+        doc = pymupdf4llm._pymupdf.open(filepath)
+        num_pages = len(doc)
+        doc.close()
+        return md_text.strip(), num_pages
+    except Exception as e:
+        print(f'Error extracting text from PDF: {e}', file=sys.stderr)
+        return None, 0
+
+def process_pdf(filepath):
     if not os.path.exists(filepath):
         print(f'Error: File not found - {filepath}')
         return None
@@ -79,19 +66,30 @@ def process_image(filepath):
         return None
     
     filesize = os.path.getsize(filepath)
+    if filesize > MAX_SIZE_BYTES:
+        print(f'Warning: PDF file size ({filesize/1024/1024:.2f}MB) exceeds recommended limit of {MAX_SIZE_MB}MB')
+    
     original_filename = os.path.basename(filepath)
     
     raw_dir = get_raw_dir()
     new_filename = get_unique_filename(raw_dir, original_filename)
     target_path = os.path.join(raw_dir, new_filename)
     
-    if filesize > MAX_SIZE_BYTES:
-        print(f'Compressing {filepath} ({filesize/1024/1024:.2f}MB) -> {target_path}')
-        compress_image(filepath, target_path)
-    else:
-        print(f'Copying {filepath} ({filesize/1024/1024:.2f}MB) -> {target_path}')
-        import shutil
-        shutil.copy2(filepath, target_path)
+    import shutil
+    print(f'Copying PDF {filepath} ({filesize/1024/1024:.2f}MB) -> {target_path}')
+    shutil.copy2(filepath, target_path)
+    
+    text, num_pages = extract_pdf_text(filepath)
+    if text:
+        text_filename = os.path.splitext(new_filename)[0] + '_text.md'
+        text_path = os.path.join(raw_dir, text_filename)
+        with open(text_path, 'w', encoding='utf-8') as f:
+            f.write(f'---\n')
+            f.write(f'pdf_file: {new_filename}\n')
+            f.write(f'pages: {num_pages}\n')
+            f.write(f'---\n\n')
+            f.write(text)
+        print(f'Extracted text saved to: {text_filename}')
     
     rel_path = os.path.relpath(target_path, get_data_dir())
     print(f'Result: {rel_path}')
@@ -118,14 +116,14 @@ def update_markdown_references(data_dir, old_path, new_rel_path):
 
 def main():
     if len(sys.argv) < 2:
-        print('Usage: python image_processor.py <image_file> [<image_file> ...]')
+        print('Usage: python pdf_processor.py <pdf_file> [<pdf_file> ...]')
         sys.exit(1)
     
     data_dir = get_data_dir()
     os.makedirs(data_dir, exist_ok=True)
     
     for filepath in sys.argv[1:]:
-        result = process_image(filepath)
+        result = process_pdf(filepath)
         if result:
             update_markdown_references(data_dir, filepath, result)
 

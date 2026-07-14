@@ -328,7 +328,7 @@ source_file: colleges/YYYY/MM/YYYY-MM-DD-gap-analysis.md
 ## 四、colleges 目录结构
 
 ```
-~/.studybuddy/
+<STUDYBUDDY_DATA_DIR>/
 ├── colleges/
 │   ├── _index.md                              # 高校资料索引（目标院校、外部资料与规划报告）
 │   ├── YYYY/                                  # 按招生年度归档（外部招生与投档参考资料）
