@@ -366,7 +366,7 @@ weak_points:
 
 ### 操作概要记入 log 文件
 
-每次执行成绩分析报告流程后，必须将操作概要记入 `raw/YYYY/MM/YYYY-MM-DD-log.md` 文件：
+每次执行成绩分析报告流程后，必须将操作概要记入 `output/YYYY/MM/YYYY-MM-DD-log.md` 文件：
 
 **记录内容**：
 - **操作类型**：成绩分析报告/单科卷面分析报告

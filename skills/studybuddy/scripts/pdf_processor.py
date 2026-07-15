@@ -8,6 +8,12 @@ except ImportError:
     print('Error: pymupdf4llm is not installed. Please install it with "pip install pymupdf4llm".', file=sys.stderr)
     sys.exit(1)
 
+try:
+    import pymupdf
+except ImportError:
+    print('Error: pymupdf is not installed. Please install it with "pip install pymupdf".', file=sys.stderr)
+    sys.exit(1)
+
 MAX_SIZE_MB = 50
 MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
 SUPPORTED_EXTENSIONS = ('.pdf',)
@@ -47,7 +53,7 @@ def get_unique_filename(raw_dir, original_filename):
 def extract_pdf_text(filepath):
     try:
         md_text = pymupdf4llm.to_markdown(filepath, header=False, footer=False)
-        doc = pymupdf4llm._pymupdf.open(filepath)
+        doc = pymupdf.open(filepath)
         num_pages = len(doc)
         doc.close()
         return md_text.strip(), num_pages

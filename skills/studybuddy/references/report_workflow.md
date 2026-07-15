@@ -93,7 +93,7 @@
 - 读取 root `_index.md` 获取全局数据
 - 读取各学科 `_index.md` 获取学科数据
 - 读取 `subjects/<学科>/YYYY/MM/` 获取详细错题记录
-- 读取 `raw/YYYY/MM/YYYY-MM-DD-log.md` 获取日志记录
+- 读取 `output/YYYY/MM/YYYY-MM-DD-log.md` 获取日志记录
 
 **数据整理**：
 - 按时间维度汇总（日、周、月）
@@ -312,7 +312,7 @@ summary:
 
 ### 操作概要记入 log 文件
 
-每次执行学情追踪流程后，必须将操作概要记入 `raw/YYYY/MM/YYYY-MM-DD-log.md` 文件：
+每次执行学情追踪流程后，必须将操作概要记入 `output/YYYY/MM/YYYY-MM-DD-log.md` 文件：
 
 **记录内容**：
 - **操作类型**：学情周报/学情月报/专项报告

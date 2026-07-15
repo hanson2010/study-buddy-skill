@@ -132,7 +132,7 @@
 
 **处理流程**：
 1. 用户上传高校资料图片或文档
-2. 原始资料保存到 `raw/YYYY/MM/` 目录
+2. 原始资料保存到 `raw/YYYY/MM/` 目录，存储时机为文件接收后立即存储，且只存储一次；拷贝前检查是否已存在同名文件，若已存在则跳过拷贝，直接使用已存在的文件路径
 3. OCR 识别并提取关键信息
 4. 整理成结构化数据保存到 `colleges/YYYY/` 目录
 5. 文件命名：`YYYY-MM-DD-<descriptive-slug>.md`
@@ -175,10 +175,10 @@ source_file: raw/YYYY/MM/<原始文件名>
 
 **处理流程**：
 1. 用户上传分数分布图片或文档
-2. 原始资料保存到 `raw/YYYY/MM/` 目录
+2. 原始资料保存到 `raw/YYYY/MM/` 目录，存储时机为文件接收后立即存储，且只存储一次；拷贝前检查是否已存在同名文件，若已存在则跳过拷贝，直接使用已存在的文件路径
 3. OCR 识别提取分数分布数据
 4. 整理成结构化数据保存到 `colleges/YYYY/` 目录
-4. 文件命名 `YYYY-MM-DD-scores-distribution.md`
+5. 文件命名 `YYYY-MM-DD-scores-distribution.md`
 
 **文件格式示例**：
 ```markdown
@@ -219,7 +219,7 @@ source_file: raw/YYYY/MM/<原始文件名>
 
 **处理流程**：
 1. 用户上传投档线图片或文档
-2. 原始资料保存到 `raw/YYYY/MM/` 目录
+2. 原始资料保存到 `raw/YYYY/MM/` 目录，存储时机为文件接收后立即存储，且只存储一次；拷贝前检查是否已存在同名文件，若已存在则跳过拷贝，直接使用已存在的文件路径
 3. OCR 识别提取投档线数据
 4. 整理保存到 `colleges/YYYY/YYYY-MM-DD-admission-lines.md`
 
@@ -378,7 +378,7 @@ source_file: colleges/YYYY/MM/YYYY-MM-DD-gap-analysis.md
 
 ## 五、操作概要记入 log 文件
 
-每次执行目标对齐流程后，必须将操作概要记入 `raw/YYYY/MM/YYYY-MM-DD-log.md` 文件：
+每次执行目标对齐流程后，必须将操作概要记入 `output/YYYY/MM/YYYY-MM-DD-log.md` 文件：
 
 ```markdown
 ## 操作记录

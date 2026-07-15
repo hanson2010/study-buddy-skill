@@ -32,7 +32,7 @@ YYYY-MM-DD-<slug>.md
 - `2026-07-12-chinese-essay-review.md` — 语文作文批改记录
 
 **特殊文件名**：
-- `YYYY-MM-DD-log.md` — 会话日志（存储在 `raw/YYYY/MM/` 目录）
+- `YYYY-MM-DD-log.md` — 会话日志（存储在 `output/YYYY/MM/` 目录）
 - `_index.md` — 索引文件（每个目录下的快速检索入口）
 - `profile.md` — 学生基础信息档案
 
