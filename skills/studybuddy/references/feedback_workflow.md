@@ -6,19 +6,19 @@
 
 ## 前置流程：图片处理与 OCR 识别
 
-当用户上传成绩分析报告或单科卷面分析报告图片时，**必须**先经过 [image_workflow.md](image_workflow.md) 的图片处理与 OCR 识别流程，将图片内容转换为文字后，再进入报告分析流程。
+当用户上传成绩分析报告或单科卷面分析报告图片时，**必须**先经过 [conversion_workflow.md](conversion_workflow.md) 的文件处理与 OCR 识别流程，将图片内容转换为文字后，再进入报告分析流程。
 
 ### 流程图
 
 ```
-用户上传报告图片 → [image_workflow.md] 图片预处理 → OCR识别 → 生成报告格式JSON → [feedback_workflow.md] 报告分析
+用户上传报告图片 → [conversion_workflow.md] 文件预处理 → OCR识别 → 生成报告格式JSON → [feedback_workflow.md] 报告分析
 ```
 
 ### OCR 输入输出规范
 
 **输入**：成绩分析报告或单科卷面分析报告图片（支持 jpg、png、pdf 等格式）
 
-**输出**：报告格式 JSON（见 image_workflow.md 中「成绩报告格式」），必须包含以下字段：
+**输出**：报告格式 JSON（见 conversion_workflow.md 中「成绩报告格式」），必须包含以下字段：
 
 | 字段 | 说明 | 是否必填 |
 |------|------|----------|

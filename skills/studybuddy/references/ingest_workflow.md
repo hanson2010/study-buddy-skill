@@ -199,13 +199,13 @@ related_topics:
 ```
 ingest_workflow (学习资料导入)
     │
-    └── image_workflow (图片处理与 OCR，如适用)
-            └── 图片存储到 raw/YYYY/MM/
+    └── conversion_workflow (文件处理与内容转换，如适用)
+            └── 文件存储到 raw/YYYY/MM/
 ```
 
 ### 数据传递
 
-- **从 image_workflow 接收**：OCR 识别结果、图片存储路径、内容结构化数据
+- **从 conversion_workflow 接收**：文件内容提取结果、文件存储路径、内容结构化数据
 - **输出**：归档文件、索引更新、资料摘要
 
 ---

@@ -325,7 +325,25 @@ source_file: colleges/YYYY/MM/YYYY-MM-DD-gap-analysis.md
 
 ---
 
-## 四、colleges 目录结构
+## 四、与其他 Workflow 的关系
+
+### 调用关系
+
+```
+aim_workflow (目标对齐)
+    │
+    └── conversion_workflow (文件处理与内容转换，如适用)
+            └── 文件存储到 raw/YYYY/MM/
+```
+
+### 数据传递
+
+- **从 conversion_workflow 接收**：文件内容提取结果、文件存储路径、内容结构化数据
+- **输出**：目标信息、高校资料、差距分析报告、学习规划书
+
+---
+
+## 五、colleges 目录结构
 
 ```
 <STUDYBUDDY_DATA_DIR>/
@@ -376,7 +394,7 @@ source_file: colleges/YYYY/MM/YYYY-MM-DD-gap-analysis.md
 
 ---
 
-## 五、操作概要记入 log 文件
+## 七、操作概要记入 log 文件
 
 每次执行目标对齐流程后，必须将操作概要记入 `output/YYYY/MM/YYYY-MM-DD-log.md` 文件：
 
@@ -391,7 +409,7 @@ source_file: colleges/YYYY/MM/YYYY-MM-DD-gap-analysis.md
 
 ---
 
-## 六、使用示例
+## 八、使用示例
 
 ### 输入示例1：设定目标
 ```text

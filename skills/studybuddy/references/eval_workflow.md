@@ -1,6 +1,6 @@
 # 作业批改工作流（eval_workflow）
 
-本文件定义通用作业批改的处理流程，支持多种题型和场景，在必要时调用 image_workflow 和 essay_workflow。
+本文件定义通用作业批改的处理流程，支持多种题型和场景，在必要时调用 conversion_workflow 和 essay_workflow。
 
 ---
 
@@ -33,9 +33,9 @@
     │
     ├── 图片输入
     │       │
-    │       ├── 识别为作文 → 调用 image_workflow → 调用 essay_workflow
+    │       ├── 识别为作文 → 调用 conversion_workflow → 调用 essay_workflow
     │       │
-    │       └── 识别为作业/试卷 → 调用 image_workflow → 执行通用批改流程
+    │       └── 识别为作业/试卷 → 调用 conversion_workflow → 执行通用批改流程
     │
     └── 文字输入
             │
@@ -48,7 +48,7 @@
 
 ### 2. 图片处理（如适用）
 
-当用户上传图片时，调用 [image_workflow.md](image_workflow.md) 进行处理：
+当用户上传图片时，调用 [conversion_workflow.md](conversion_workflow.md) 进行处理：
 
 - **日期确定**：根据图片内容识别日期或使用当前时间
 - **图片存储**：保存到 `raw/YYYY/MM/` 目录，存储时机为文件接收后立即存储，且只存储一次；拷贝前检查是否已存在同名文件，若已存在则跳过拷贝，直接使用已存在的文件路径
@@ -77,7 +77,7 @@
 当识别为作文时，**由 eval_workflow 负责图片处理和 OCR 识别**，然后调用 [essay_workflow.md](essay_workflow.md) 进行批改：
 
 **图片处理（由 eval_workflow 负责）**：
-- 调用 image_workflow 进行图片存储和 OCR 识别
+- 调用 conversion_workflow 进行图片存储和 OCR 识别
 - 将图片内容转换为文字
 - 提取作文标题、段落、字数等信息
 
@@ -185,7 +185,7 @@ correct_rate: [正确率]
 ```
 eval_workflow (通用作业批改)
     │
-    ├── image_workflow (图片处理与 OCR)
+    ├── conversion_workflow (图片处理与 OCR)
     │       └── 图片存储到 raw/YYYY/MM/
     │
     └── essay_workflow (作文批改)
@@ -194,7 +194,7 @@ eval_workflow (通用作业批改)
 
 ### 数据传递
 
-- **从 image_workflow 接收**：OCR 识别结果、图片存储路径、内容结构化数据
+- **从 conversion_workflow 接收**：OCR 识别结果、图片存储路径、内容结构化数据
 - **传递给 essay_workflow**：作文文本、图片路径、学科信息
 - **输出**：批改结果、错题归档文件、薄弱点更新
 
