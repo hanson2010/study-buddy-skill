@@ -74,6 +74,8 @@ cp -r skills/studybuddy/* .trae/skills/studybuddy/
 
 数据存储在环境变量 `STUDYBUDDY_DATA_DIR` 指定的目录中。必须设置该环境变量，否则会提醒用户设置后再继续使用。
 
+可选环境变量 `STUDYBUDDY_REPORT_WEBHOOK`：设置后，生成的学情报告（周报 / 月报 / 专项报告）会在落盘后自动 POST 到该地址（请求体为 `{"content": "<报告 Markdown 全文>"}`）；**不设置则安静跳过**，不影响报告生成。详见 `skills/studybuddy/references/report_workflow.md`。
+
 ```
 <STUDYBUDDY_DATA_DIR>/
 ├── profile.md                 # 学习背景档案（姓名、年级、文理科、教材版本、学习目标）
