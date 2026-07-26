@@ -323,26 +323,6 @@ source_file: colleges/YYYY/MM/YYYY-MM-DD-gap-analysis.md
 | 本周 | [学习安排]      | [预期达到的状态] |
 ```
 
----
-
-## 四、与其他 Workflow 的关系
-
-### 调用关系
-
-```
-aim_workflow (目标对齐)
-    │
-    └── conversion_workflow (文件处理与内容转换，如适用)
-            └── 文件存储到 raw/YYYY/MM/
-```
-
-### 数据传递
-
-- **从 conversion_workflow 接收**：文件内容提取结果、文件存储路径、内容结构化数据
-- **输出**：目标信息、高校资料、差距分析报告、学习规划书
-
----
-
 ## 五、colleges 目录结构
 
 ```

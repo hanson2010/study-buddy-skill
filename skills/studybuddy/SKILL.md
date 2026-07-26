@@ -15,20 +15,22 @@ description: "高中生AI学习伴侣：作业批改、错题归档、知识点�
 
 ### 子命令体系
 
-本技能提供 6 个子命令，用于启动不同的 workflow：
+本技能提供 8 个**平铺**子命令，各子命令独立处理对应工作流：
 
 | 子命令 | 功能 | 对应 Workflow | 适用场景 |
 |--------|------|---------------|----------|
 | `aim` | 目标对齐 | [aim_workflow.md](references/aim_workflow.md) | 设定学习目标、上传高校资料、制定学习规划 |
 | `ingest` | 学习资料导入 | [ingest_workflow.md](references/ingest_workflow.md) | 导入课本资料、讲义、笔记、参考材料，按学科分类归档 |
-| `learn` | 知识点学习与巩固 | [learn_workflow.md](references/learn_workflow.md) | 学习知识点、复习薄弱点、古诗文学习 |
+| `learn` | 知识点学习与巩固 | [learn_workflow.md](references/learn_workflow.md) | 学习知识点、复习薄弱点（含视频推荐） |
+| `classical` | 古诗文记忆与理解 | [classical_workflow.md](references/classical_workflow.md) | 古诗词、文言文的背诵、理解与鉴赏 |
 | `eval` | 作业批改与错题归档 | [eval_workflow.md](references/eval_workflow.md) | 上传作业/试卷照片、请求批改错题 |
+| `essay` | 语文作文批改 | [essay_workflow.md](references/essay_workflow.md) | 作文图片/文本的批改、评分与升格 |
 | `feedback` | 成绩反馈 | [feedback_workflow.md](references/feedback_workflow.md) | 上传成绩分析报告、单科卷面分析报告 |
 | `report` | 学情追踪 | [report_workflow.md](references/report_workflow.md) | 生成学习周报/月报、分析学习趋势 |
 
 **子命令使用方式**：
-- 用户可通过输入命令形式触发：如 `aim`、`ingest`、`learn`、`eval`、`feedback`、`report`
-- 用户也可通过自然语言触发：如"帮我设定目标"、"帮我导入学习资料"、"我要学习导数"、"帮我批改作业"、"分析我的成绩"、"生成学习周报"
+- 用户可通过输入命令形式触发：如 `aim`、`ingest`、`learn`、`classical`、`eval`、`essay`、`feedback`、`report`
+- 用户也可通过自然语言触发：如"帮我设定目标"、"帮我导入学习资料"、"我要学习导数"、"学习《登高》"、"帮我批改作业"、"批改这篇作文"、"分析我的成绩"、"生成学习周报"
 - 当用户上传图片时，自动识别内容类型并匹配对应的 workflow
 
 ## 一页核心规则（先读）
@@ -38,12 +40,12 @@ description: "高中生AI学习伴侣：作业批改、错题归档、知识点�
 1. **智能辅导六步法与交互确认**：辅导与学习顺序固定为「诊断/识别 → 错因/盲区分析 → 视频推荐 → 分步讲解 → 举一反三 → 归档/同步」。执行时切忌一路走完，在「分步讲解」后必须交互式地请学生确认是否理解、是否遇到困难，只有在学生确认理解或主动要求时，再进入后续步骤（特别是举一反三练习，严禁在对话上下文中未经确认就显式刷出长篇练习题目）。
 2. **视频推荐不能漏**：每次错题辅导必须推荐 1-2 个国内平台视频（作为第 3 步在分步讲解前提供）；若环境提供联网搜索工具（不同平台名称可能不同，如 CodeBuddy 的 `web_search`），必须实时搜索；联网不可用或无联网搜索能力时，降级为给 B站/国家智慧教育平台的搜索关键词。
 3. **信息不足先补齐**：图片模糊、教材版本缺失、题目不全时，先给用户一条可复制的补充话术，不要强行猜测。
-4. **六科均衡发展**：每科都从 [references/index_templates.md](references/index_templates.md) 读取高频主题和考点；其他主题先生成基础模板，再提示可按教材或原题继续细化。
+4. **六科均衡发展**：每科都从 [templates/index_templates.md](templates/index_templates.md) 读取高频主题和考点；其他主题先生成基础模板，再提示可按教材或原题继续细化。
 5. **长期记忆驱动个性化**：每次批改和讲解前，先读取该学生的 `_index.md`（快速检索薄弱点）和 `profile.md`，命中薄弱点即高亮提示。
 6. **本地索引优先检索**：执行与该学科/主题相关的 workflow（如 learn、eval、feedback、report 等）时，首先在相应文件夹的 `_index.md` 中检索已有信息（如 `subjects/<学科>/_index.md`、`colleges/_index.md`、Root `_index.md`）；仅在 `_index.md` 中找不到所需内容或信息不足时，才尝试通过联网搜索工具获取。
 7. **参考材料隔离**：标准答案、作文范文、同学范文等参考材料保存到 `subjects/<学科>/YYYY/MM/`，通过 frontmatter 的 `reference_type` 字段（`standard_answer`/`model_essay`/`classmate_essay`）标识，此类文件不触发错题归档、不更新薄弱点、不更新正确率和成绩记录。
 8. **日期选择规则**：根据原始资料中可识别的日期信息（如试卷日期、作业日期、考试日期）或执行本工作的当前时间，确定对应的 `YYYY/MM` 文件夹；当文件夹不存在时自动创建，不得武断选择之前发现的文件夹。
-9. **原始资料存储规则**：用户上传的任何资料（图片、文档等），无论使用哪个子命令（aim、learn、ingest、eval、feedback）或未明确指定子命令，都必须先存入 `raw/YYYY/MM/` 目录，使用原始文件名存储；当原文件名存在时，通过添加数字后缀避免原文件被覆盖；处理结果文件中必须引用正确的相对路径（`raw/YYYY/MM/<文件名>`），如果文件名有修改，相应修改引用路径。
+9. **原始资料存储规则**：用户上传的任何资料（图片、文档等），无论使用哪个子命令（aim、ingest、learn、classical、eval、essay、feedback）或未明确指定子命令，都必须先存入 `raw/YYYY/MM/` 目录，使用原始文件名存储；当原文件名存在时，通过添加数字后缀避免原文件被覆盖；处理结果文件中必须引用正确的相对路径（`raw/YYYY/MM/<文件名>`），如果文件名有修改，相应修改引用路径。
 10. **加工文件更新建新文件并同步索引**：对于已经加工生成的、形如 `YYYY-MM-DD-<slug>.md` 的文件（错题、练习、资料、报告等），若需更新其内容，优先以**新的日期**创建新文件，而非直接编辑旧文件；更新完成后必须同步更新对应的 `_index.md`，避免后续检索/引用时索引到过期旧文件。
 11. **操作概要记入 log 文件**：每次执行的操作概要必须及时记入 `output/YYYY/MM/YYYY-MM-DD-log.md` 文件，包括操作类型、处理的文件、生成的文件、更新的索引等信息。
 12. **未支持学科跳过规则**：本技能仅支持六科（语文、数学、英语、物理、化学、生物）。遇到未支持学科的资料、知识点、作业、成绩等信息时，简单跳过即可，不进行处理；用户询问时，可告知不支持该学科。
@@ -73,11 +75,11 @@ description: "高中生AI学习伴侣：作业批改、错题归档、知识点�
 
 ### 3. 知识点学习与巩固
 
-支持知识点学习、薄弱点复习和概念理解，通过智能辅导六步法提供个性化学习体验。详细规则见 [references/learn_workflow.md](references/learn_workflow.md)。
+支持知识点学习、薄弱点复习和概念理解，通过智能辅导六步法提供个性化学习体验。**视频推荐规则也并入了本工作流**。详细规则见 [references/learn_workflow.md](references/learn_workflow.md)。
 
 - **学习需求识别**：支持明确知识点学习、薄弱点复习、概念理解等多种学习场景
 - **学情数据读取**：读取 `profile.md`、`_index.md` 和已导入资料，提供个性化学习建议
-- **视频推荐**：在讲解前推荐 1-2 个国内平台的优质微课视频或提供搜索关键词
+- **视频推荐**：在讲解前推荐 1-2 个国内平台的优质微课视频或提供搜索关键词（详细规则见 learn_workflow.md 的「视频推荐」章节）
 - **分步讲解**：采用分步文字 + 可视化方式深入讲解知识点
 - **交互确认**：讲解后必须暂停，主动请用户确认是否理解
 - **练习巩固**：生成梯度练习题（基础巩固 → 提高强化 → 挑战拔高），单次不超过 8 题
@@ -85,22 +87,14 @@ description: "高中生AI学习伴侣：作业批改、错题归档、知识点�
 
 ### 4. 古诗文记忆与理解
 
-古诗文学习（古诗词、文言文）走独立流程，适用于背诵、理解与鉴赏。详细规则见 [references/classical_workflow.md](references/classical_workflow.md) 和 [references/learn_workflow.md](references/learn_workflow.md)。
+古诗文学习（古诗词、文言文）走独立流程，适用于背诵、理解与鉴赏。详细规则见 [references/classical_workflow.md](references/classical_workflow.md)。
 
 - **学习流程**：初读感知 → 字词解析 → 句意翻译 → 内容赏析 → 情境联想 → 记忆巩固
 - **背诵技巧**：分段背诵、关键词记忆、画面记忆、节奏记忆、理解记忆
 - **默写练习**：生成填空题、补句题、全篇默写题
 - **薄弱点记录**：古诗文相关薄弱点（如实词理解、虚词用法、翻译技巧、意象鉴赏、默写错字）记录到语文 `_index.md` 的薄弱点表中
 
-### 5. AI 问答
-
-多轮对话问难题，结合学生历史学情给出个性化讲解：
-
-- 开口前先检索该学生的学情记忆（`_index.md` + `profile.md`），快速定位薄弱点后再深入 `subjects/<学科>/` 查看详细错题
-- 了解讲解风格偏好、近期薄弱点、常犯错误类型
-- 用个性化方式解答，避免重复讲解已掌握内容
-
-### 6. 作业批改与错题归档
+### 5. 作业批改与错题归档
 
 拍照上传作业/试卷 → AI 自动识别题目 → 判断对错 → 给出解析和错误类型 → 自动归档错题。详细规则见 [references/eval_workflow.md](references/eval_workflow.md)。
 
@@ -110,11 +104,9 @@ description: "高中生AI学习伴侣：作业批改、错题归档、知识点�
 - **相似错题检测**：归档前检索已有错题库，发现同知识点错题时提醒用户复习
 - **闪卡复习**：错题可生成闪卡格式，便于快速回顾
 
-### 7. 语文作文批改
+### 6. 语文作文批改
 
 语文作文批改不套用通用的「难题破解五步法」，走独立流程。详细规则见 [references/essay_workflow.md](references/essay_workflow.md)。
-
-**图片处理**：作文图片的处理与 OCR 识别由 [eval_workflow.md](references/eval_workflow.md) 负责，[essay_workflow.md](references/essay_workflow.md) 不处理图片，只接收已识别的作文文本进行批改。
 
 - **评分标准**：参照高考作文评分标准（立意、结构、语言、素材、创新），分项评分并给出总分和等级
 - **批改流程**：审题分析 → 分项评分 → 问题诊断 → 升格建议 → 范文对照 → 片段练习
@@ -122,11 +114,9 @@ description: "高中生AI学习伴侣：作业批改、错题归档、知识点�
 - **薄弱点记录**：作文相关薄弱点（如审题偏差、素材陈旧、论证单一）记录到语文 `_index.md` 的薄弱点表中
 - **图片引用**：作文文件中记录原始图片引用路径，方便回溯查看手写原稿
 
-### 8. 成绩反馈
+### 7. 成绩反馈
 
 支持用户上传成绩分析报告或单科卷面分析报告图片，进行智能分析和个性化复习建议。详细规则见 [references/feedback_workflow.md](references/feedback_workflow.md)。
-
-**OCR 前置流程**：当用户上传成绩分析报告或单科卷面分析报告图片时，必须先经过 [references/conversion_workflow.md](references/conversion_workflow.md) 的文件处理与 OCR 识别流程，将图片内容转换为结构化数据后，再进入成绩分析流程。
 
 - **报告类型**：成绩分析报告（多学科综合）、单科卷面分析报告（单学科详细）
 - **分析流程**：数据提取与结构化 → 成绩综合分析 → 薄弱点识别与标记 → 个性化复习建议 → 与历史数据对比
@@ -136,7 +126,7 @@ description: "高中生AI学习伴侣：作业批改、错题归档、知识点�
 - **与历史数据对比**：纵向对比上次考试成绩，横向对比班级/年级平均分
 - **成绩记录更新**：上传成绩分析报告后更新 root `_index.md` 的历次考试成绩记录；上传单科卷面分析报告后更新对应学科 `_index.md` 的薄弱点表
 
-### 9. 学情追踪
+### 8. 学情追踪
 
 自动统计并可视化学习数据，生成学情报告保存到 `output/` 目录。详细规则见 [references/report_workflow.md](references/report_workflow.md)。
 
@@ -145,7 +135,7 @@ description: "高中生AI学习伴侣：作业批改、错题归档、知识点�
 - **个性化建议**：基于数据给出个性化复习建议
 - **趋势分析**：分析学习趋势，预测可能的薄弱点
 
-### 10. 参考材料识别与归档
+### 9. 参考材料识别与归档
 
 用户可能上传标准答案、作文范文或同学范文，需识别并隔离存储，避免污染学生本人的学习记录。
 
@@ -327,7 +317,7 @@ python skills/studybuddy/scripts/image_processor.py photo.jpg
 | 学科 | `<STUDYBUDDY_DATA_DIR>/subjects/<学科>/_index.md` | 学科索引、高频主题、高频考点、学科学习目标、薄弱点表、正确率趋势、最近错题 | 薄弱点表、正确率趋势记录、最近错题列表 |
 
 > [!NOTE]
-> 学生的基础静态信息（姓名、年级、选科、教材版本等）保存在 `profile.md` 中，而 `_index.md` 仅记录动态学习状态、薄弱点和考试成绩。详细文件模板见 [references/index_templates.md](references/index_templates.md)。
+> 学生的基础静态信息（姓名、年级、选科、教材版本等）保存在 `profile.md` 中，而 `_index.md` 仅记录动态学习状态、薄弱点和考试成绩。详细文件模板见 [templates/index_templates.md](templates/index_templates.md)。
 
 ### 2. 创建与更新时机
 
@@ -368,18 +358,12 @@ python skills/studybuddy/scripts/image_processor.py photo.jpg
 
 ## 参考文档
 
-- 快速索引与使用示例：[references/quick_start.md](references/quick_start.md)
-- 索引文件模板与维护规则：[references/index_templates.md](references/index_templates.md)
-- 文件接收与内容转换流程：[references/conversion_workflow.md](references/conversion_workflow.md)
-- 视频推荐平台与搜索模板：[references/video_resources.md](references/video_resources.md)
+- 索引文件模板与维护规则：[templates/index_templates.md](templates/index_templates.md)
 - 目标对齐流程：[references/aim_workflow.md](references/aim_workflow.md)
 - 学习资料导入工作流：[references/ingest_workflow.md](references/ingest_workflow.md)
-- 知识点学习工作流：[references/learn_workflow.md](references/learn_workflow.md)
+- 知识点学习工作流（含视频推荐规则）：[references/learn_workflow.md](references/learn_workflow.md)
 - 古诗文记忆与理解流程：[references/classical_workflow.md](references/classical_workflow.md)
 - 作业批改工作流：[references/eval_workflow.md](references/eval_workflow.md)
 - 语文作文批改流程：[references/essay_workflow.md](references/essay_workflow.md)
 - 成绩反馈流程：[references/feedback_workflow.md](references/feedback_workflow.md)
 - 学情追踪流程：[references/report_workflow.md](references/report_workflow.md)
-- 图片处理工具：[scripts/image_processor.py](scripts/image_processor.py)
-- PDF 处理工具：[scripts/pdf_processor.py](scripts/pdf_processor.py)
-- Office 文档处理工具：[scripts/office_processor.py](scripts/office_processor.py)

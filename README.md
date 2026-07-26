@@ -10,20 +10,22 @@ StudyBuddy 是一个面向高中生的 AI 学习助手，专注于作业批改�
 
 ### 子命令使用
 
-本助手提供 6 个子命令，用于启动不同的工作流程：
+本助手提供 8 个子命令，用于启动不同的工作流程：
 
 | 子命令 | 功能 | 适用场景 |
 |--------|------|----------|
 | `aim` | 目标对齐 | 设定学习目标、上传高校资料、制定学习规划 |
-| `ingest` | 学习资料导入 | 导入课本资料、讲义、笔记、参考材料，按学科分类归档 |
-| `learn` | 知识点学习与巩固 | 学习知识点、复习薄弱点、古诗文学习 |
+| `ingest` | 学习资料导入 | 导入课本资料、讲义、笔记、参考材料，按学科分类归档（非文本内容需先由其他工具转换为文本） |
+| `learn` | 知识点学习与巩固 | 学习知识点、复习薄弱点（含视频推荐规则） |
+| `classical` | 古诗文记忆与理解 | 古诗词、文言文的背诵、理解与鉴赏 |
 | `eval` | 作业批改与错题归档 | 上传作业/试卷照片、请求批改错题 |
+| `essay` | 语文作文批改 | 作文图片/文本的批改、评分与升格 |
 | `feedback` | 成绩反馈 | 上传成绩分析报告、单科卷面分析报告 |
 | `report` | 学情追踪 | 生成学习周报/月报、分析学习趋势 |
 
 **使用方式**：
-- **命令形式**：直接输入子命令，如 `aim`、`ingest`、`learn`、`eval`、`feedback`、`report`
-- **自然语言形式**：用自然语言描述需求，如"帮我导入学习资料"、"我要学习导数"、"帮我批改作业"、"分析我的成绩"、"生成学习周报"
+- **命令形式**：直接输入子命令，如 `aim`、`ingest`、`learn`、`classical`、`eval`、`essay`、`feedback`、`report`
+- **自然语言形式**：用自然语言描述需求，如"帮我导入学习资料"、"我要学习导数"、"学习《登高》"、"帮我批改作业"、"批改这篇作文"、"分析我的成绩"、"生成学习周报"
 - **图片触发**：上传图片时自动识别内容类型并匹配对应的工作流程
 
 ### 典型用法
@@ -113,7 +115,9 @@ cp -r skills/studybuddy/* .trae/skills/studybuddy/
 - [SKILL.md](skills/studybuddy/SKILL.md) — 完整教学规则
 - [aim_workflow.md](skills/studybuddy/references/aim_workflow.md) — 目标对齐工作流
 - [ingest_workflow.md](skills/studybuddy/references/ingest_workflow.md) — 学习资料导入工作流
-- [learn_workflow.md](skills/studybuddy/references/learn_workflow.md) — 知识点学习工作流
+- [learn_workflow.md](skills/studybuddy/references/learn_workflow.md) — 知识点学习工作流（含视频推荐规则）
+- [classical_workflow.md](skills/studybuddy/references/classical_workflow.md) — 古诗文记忆与理解工作流
 - [eval_workflow.md](skills/studybuddy/references/eval_workflow.md) — 作业批改工作流
+- [essay_workflow.md](skills/studybuddy/references/essay_workflow.md) — 语文作文批改工作流
 - [feedback_workflow.md](skills/studybuddy/references/feedback_workflow.md) — 成绩反馈工作流
 - [report_workflow.md](skills/studybuddy/references/report_workflow.md) — 学情追踪工作流
