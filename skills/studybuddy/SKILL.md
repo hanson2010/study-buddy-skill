@@ -1,6 +1,6 @@
 ---
 name: studybuddy
-description: "高中生AI学习伴侣：作业批改、错题归档、知识点追踪、举一反三练习。当用户上传作业/试卷照片、请求批改错题、询问学习进度、或显式调用时触发。"
+description: "高中生AI学习伴侣，覆盖语文/数学/英语/物理/化学/生物六科：目标对齐(aim)、学习资料导入(ingest)、知识点学习与巩固(learn)、古诗文背诵与鉴赏(classical)、作业批改与错题归档(eval)、语文作文批改(essay)、成绩报告分析(feedback)、学情周报月报(report)。当用户上传作业/试卷/作文/成绩单照片，请求批改错题或作文，学习或复习知识点，背诵古诗词文言文，导入课本讲义笔记，设定目标院校与学习规划，询问学习进度或生成学情报告，或显式调用上述子命令时触发。"
 ---
 
 # StudyBuddy - 高中生智能学习伴侣
@@ -108,7 +108,7 @@ description: "高中生AI学习伴侣：作业批改、错题归档、知识点�
 
 语文作文批改不套用通用的「难题破解五步法」，走独立流程。详细规则见 [references/essay_workflow.md](references/essay_workflow.md)。
 
-- **评分标准**：参照高考作文评分标准（立意、结构、语言、素材、创新），分项评分并给出总分和等级
+- **评分标准**：按北京卷两种题型分别评分——**大作文 50 分**（不少于 700 字，基础等级 40 + 发展等级 10，一类文 42-50）、**微写作 10 分**（不超过 150 字，按审题/观点/理由/深度四条标准判档，一类文 8-10）；输出「得分/满分」与档位，不得只给裸分
 - **批改流程**：审题分析 → 分项评分 → 问题诊断 → 升格建议 → 范文对照 → 片段练习
 - **范文对照**：主动检索同题或同类题目的 `model_essay`（作文范文）和 `classmate_essay`（同学范文）进行对比分析
 - **薄弱点记录**：作文相关薄弱点（如审题偏差、素材陈旧、论证单一）记录到语文 `_index.md` 的薄弱点表中
@@ -176,7 +176,7 @@ description: "高中生AI学习伴侣：作业批改、错题归档、知识点�
    - 统一要求：在学生明确搞懂且做好准备后，实时生成 3-8 道梯度练习题（基础巩固 → 提高强化 → 挑战拔高），并附答案与易错点提醒。
 6. **归档与同步 (Archiving & State Sync)**
    - `eval` 场景：将新错题以 Markdown 归档至 `subjects/` 目录，更新薄弱点与正确率记录。
-   - `learn` 场景：记录学习日志（追加会话摘要至 `raw/`），根据练习反馈更新/流转对应知识点在 `_index.md` 中的掌握状态。
+   - `learn` 场景：记录学习日志（追加会话摘要至 `output/YYYY/MM/YYYY-MM-DD-log.md`），根据练习反馈更新/流转对应知识点在 `_index.md` 中的掌握状态。
 
 ### 数据目录结构
 
@@ -192,9 +192,6 @@ description: "高中生AI学习伴侣：作业批改、错题归档、知识点�
 │   ├── YYYY/
 │   │   └── MM/
 │   │       └── <图片文件>  # 用户上传的图片（使用原始文件名，如 photo.jpg）
-├── .venv/                # Python 虚拟环境（Agent 运行脚本时必须使用此环境）
-│   └── Scripts/
-│       └── python.exe    # 虚拟环境 Python 解释器
 ├── subjects/             # 学科数据（导入资料、错题、练习，按科目+年月归档）
 │   ├── 语文/
 │   │   ├── _index.md     # 语文学科索引（高频主题、考点、薄弱点、导入资料）
@@ -218,74 +215,13 @@ description: "高中生AI学习伴侣：作业批改、错题归档、知识点�
     │       └── YYYY-MM-DD-log.md  # 日志文件（如 2026-07-12-log.md，包含操作记录和会话摘要）
 ```
 
-## Python 虚拟环境
+## 非文本内容的转换边界
 
-### 虚拟环境位置
+本 skill **只处理文本内容**，不自行执行 OCR / 格式转换，也不依赖任何随本 skill 分发的脚本。
 
-所有 Python 脚本必须使用 `<STUDYBUDDY_DATA_DIR>/.venv/` 下的虚拟环境运行，**禁止使用系统 Python 或其他环境**。
+用户上传的图片、PDF、Office 文档等非文本资料，由 Agent 使用**当前环境中已有的能力或其他 skill** 转换为文本后，再交给本 skill 的各 workflow 处理；原始文件仍按核心规则 9 存入 `raw/YYYY/MM/` 并在结果文件中引用其路径。若环境中无可用的转换能力，提示用户以文本形式提供资料。
 
-### 虚拟环境结构
-
-```
-<STUDYBUDDY_DATA_DIR>/
-└── .venv/
-    ├── Scripts/
-    │   ├── python.exe       # Python 解释器
-    │   ├── pip.exe          # 包管理工具
-    │   └── Activate.ps1     # PowerShell 激活脚本
-    └── Lib/
-        └── site-packages/   # 依赖包安装位置
-```
-
-### 脚本运行方式
-
-**Windows PowerShell**：
-
-```powershell
-# 直接使用虚拟环境解释器运行脚本
-& "$env:STUDYBUDDY_DATA_DIR\.venv\Scripts\python.exe" <脚本路径> <参数>
-
-# 示例：运行图片处理脚本
-& "$env:STUDYBUDDY_DATA_DIR\.venv\Scripts\python.exe" skills/studybuddy/scripts/image_processor.py photo.jpg
-
-# 示例：运行PDF处理脚本
-& "$env:STUDYBUDDY_DATA_DIR\.venv\Scripts\python.exe" skills/studybuddy/scripts/pdf_processor.py textbook.pdf
-
-# 示例：运行Office处理脚本
-& "$env:STUDYBUDDY_DATA_DIR\.venv\Scripts\python.exe" skills/studybuddy/scripts/office_processor.py notes.docx
-```
-
-**激活虚拟环境后运行**（不推荐，可能导致路径问题）：
-
-```powershell
-& "$env:STUDYBUDDY_DATA_DIR\.venv\Scripts\Activate.ps1"
-python skills/studybuddy/scripts/image_processor.py photo.jpg
-```
-
-### 依赖管理
-
-- **安装依赖**：使用虚拟环境的 pip 安装依赖
-  ```powershell
-  & "$env:STUDYBUDDY_DATA_DIR\.venv\Scripts\pip.exe" install Pillow pymupdf4llm python-docx openpyxl python-pptx xlrd
-  ```
-
-- **创建 requirements.txt**：
-  ```powershell
-  & "$env:STUDYBUDDY_DATA_DIR\.venv\Scripts\pip.exe" freeze > requirements.txt
-  ```
-
-- **安装 requirements.txt**：
-  ```powershell
-  & "$env:STUDYBUDDY_DATA_DIR\.venv\Scripts\pip.exe" install -r requirements.txt
-  ```
-
-### 环境检查
-
-运行脚本前，Agent 必须确认虚拟环境存在且可用：
-
-1. 检查 `<STUDYBUDDY_DATA_DIR>/.venv/Scripts/python.exe` 是否存在
-2. 检查 `STUDYBUDDY_DATA_DIR` 环境变量是否已设置
-3. 若虚拟环境不存在，提醒用户创建后再运行脚本
+> 完整规则见 [references/ingest_workflow.md](references/ingest_workflow.md) 的「非文本内容转换」章节，该章节是此边界的唯一权威定义。
 
 ## 长期记忆系统
 

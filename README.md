@@ -19,7 +19,7 @@ StudyBuddy 是一个面向高中生的 AI 学习助手，专注于作业批改�
 | `learn` | 知识点学习与巩固 | 学习知识点、复习薄弱点（含视频推荐规则） |
 | `classical` | 古诗文记忆与理解 | 古诗词、文言文的背诵、理解与鉴赏 |
 | `eval` | 作业批改与错题归档 | 上传作业/试卷照片、请求批改错题 |
-| `essay` | 语文作文批改 | 作文图片/文本的批改、评分与升格 |
+| `essay` | 语文作文批改 | 作文图片/文本的批改、评分与升格（北京卷：微写作 10 分 / 大作文 50 分） |
 | `feedback` | 成绩反馈 | 上传成绩分析报告、单科卷面分析报告 |
 | `report` | 学情追踪 | 生成学习周报/月报、分析学习趋势 |
 
@@ -76,37 +76,15 @@ cp -r skills/studybuddy/* .trae/skills/studybuddy/
 
 数据存储在环境变量 `STUDYBUDDY_DATA_DIR` 指定的目录中。必须设置该环境变量，否则会提醒用户设置后再继续使用。
 
- 可选环境变量 `STUDYBUDDY_REPORT_WEBHOOK`：设置后，生成的学情报告（周报 / 月报 / 专项报告）会在落盘后自动 POST 到该地址（请求体为 `{"content": "<报告正文 Markdown>"}`，**不含 Frontmatter**）；**不设置则安静跳过**，不影响报告生成。详见 `skills/studybuddy/references/report_workflow.md`。
+ 可选环境变量 `STUDYBUDDY_REPORT_WEBHOOK`：设置后，生成的学情报告（日报 / 周报 / 月报 / 专项报告）会在落盘后自动 POST 到该地址（请求体为 `{"content": "<报告正文 Markdown>"}`，**不含 Frontmatter**）；**不设置则安静跳过**，不影响报告生成。详见 [report_workflow.md](skills/studybuddy/references/report_workflow.md) 的「报告推送」章节。
 
-```
-<STUDYBUDDY_DATA_DIR>/
-├── profile.md                 # 学习背景档案（姓名、年级、文理科、教材版本、学习目标）
-├── _index.md                  # 学习总览（六科状态汇总、历次考试成绩、全局薄弱点）
-├── colleges/                  # 高校资料（目标院校专业组、投档数据、分数分布）
-│   ├── _index.md              # 高校资料索引
-│   └── YYYY/                  # 按年份归档
-│       └── YYYY-MM-DD-<slug>.md # 示例：2026-07-12-peking-university.md
-├── raw/                       # 原始数据（按年月归档）
-│   ├── YYYY/MM/              # 图片文件（使用原始文件名）
-│   └── YYYY/MM/YYYY-MM-DD-log.md  # 会话日志
-├── subjects/                  # 学科数据（错题、练习，按科目+年月归档）
-│   ├── 语文/_index.md         # 语文学科索引
-│   └── 语文/YYYY/MM/YYYY-MM-DD-descriptive-slug.md
-└── output/                    # 学习产出（学情报告等，按年月归档）
-```
+数据目录的完整结构（`profile.md`、`_index.md`、`colleges/`、`raw/`、`subjects/`、`output/`）定义在 [SKILL.md 的「数据目录结构」](skills/studybuddy/SKILL.md) 一节。
 
 ---
 
 ## 📝 核心规则
 
-| 序号 | 规则名称 | 说明 |
-|------|----------|------|
-| 1 | 智能辅导六步法 | 辅导与学习必须按「诊断/识别 → 错因/盲区分析 → 分步讲解 → 视频推荐 → 举一反三 → 归档/同步」顺序执行（根据场景适配或跳过部分步骤） |
-| 2 | 视频推荐不能漏 | 每次错题讲解后必须推荐 1-2 个优质视频 |
-| 3 | 长期记忆驱动个性化 | 批改和讲解前先读取学生档案，命中薄弱点即高亮提示 |
-| 4 | 参考材料隔离 | 标准答案、范文等通过 frontmatter 字段标识，不影响学生学情记录 |
-| 5 | 图片存储规则 | 用户上传的图片存入 `raw/YYYY/MM/`，使用原始文件名，同名文件添加数字后缀 |
-| 6 | 操作概要记入 log | 每次操作概要必须记入 `YYYY-MM-DD-log.md` 文件 |
+完整的 12 条核心规则（智能辅导六步法与交互确认、视频推荐、参考材料隔离、原始资料存储、日志记录等）以 [SKILL.md 的「一页核心规则」](skills/studybuddy/SKILL.md) 为**唯一权威来源**，本文不复述，以免与之产生分歧。
 
 ---
 

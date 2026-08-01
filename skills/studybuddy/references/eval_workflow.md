@@ -104,7 +104,7 @@ difficulty: medium  # easy/medium/hard
 question_type: [题目类型]
 error_type: [错误类型]
 is_weak_area: false  # runtime-derived
-image_path: [图片路径，如有]
+source_path: [图片路径，如有]
 correct_rate: [正确率]
 ---
 ```
@@ -163,7 +163,7 @@ correct_rate: [正确率]
 - **核心数据**：批改5题，正确率80%，新增1个薄弱点
 ```
 
-## 四、使用示例
+## 三、使用示例
 
 ### 输入示例1：上传作业照片
 ```text

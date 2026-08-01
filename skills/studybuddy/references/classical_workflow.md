@@ -55,7 +55,7 @@
 ```yaml
 ---
 date: YYYY-MM-DD
-subject: chinese
+subject: 语文
 topic: 古诗文
 content_type: classical_poem  # classical_poem（古诗词）/ classical_prose（文言文）
 title: [作品标题]
@@ -66,6 +66,7 @@ tags:
   - [标签2]
 difficulty: [基础/提高/挑战]
 learning_progress: [背诵/理解/鉴赏/应用]
+source_path:  # 原始资料路径（如有），如 raw/YYYY/MM/photo.jpg
 weak_points:
   - [薄弱点1]
   - [薄弱点2]

@@ -29,7 +29,7 @@
 - 各学科的练习记录
 
 ### 4. output/ 目录
-- 日志文件（`YYYY-MM/YYYY-MM-DD-log.md`）：记录每次学习、复习、改错等活动的操作概要，是报告统计学习天数、学习时长、活动类型等数据的**主要来源**
+- 日志文件（`output/YYYY/MM/YYYY-MM-DD-log.md`）：记录每次学习、复习、改错等活动的操作概要，是报告统计学习天数、学习时长、活动类型等数据的**主要来源**
 - 学情报告文件
 
 ### 5. raw/ 目录
@@ -39,35 +39,26 @@
 
 ## 三、报告类型
 
+> [!IMPORTANT]
+> **正文的章节结构以 [templates/report_file_templates.md](../templates/report_file_templates.md) 为唯一定义**，本节只说明各报告的适用场景与定位，不重复列举章节，以免两处产生分歧。
+
 ### 1. 日报（daily）
 
 **适用场景**：每天的学习任务提醒（主要由外部自动化任务定时调用），用于当天快速浏览学习重点
 
-**包含内容**（最简化，聚焦「今日待办」）：
-- **今日待办**：列出当天需重点跟进的学习任务
-- **待巩固薄弱点速览**：最多 3 个最需要今日复习的薄弱点
-- **今日能量补给**：简短有趣的提醒文字，降低挫败感，鼓励立即开始学习
+**定位**：最简化，聚焦「今日做什么」，语气轻松，降低挫败感。正文结构见模板文件的「日报正文示例」。
 
 ### 2. 周报（weekly）
 
 **适用场景**：按周生成（由用户手动请求，或由外部自动化任务定时调用），总结一周的学习情况
 
-**包含内容**（简化版，聚焦"本周回顾 + 下周展望"）：
-- **本周回顾**：学习天数/总时长、批改题量与平均正确率、薄弱点增减、主要错误类型
-- **下周展望**：重点复习方向、复习建议、推荐视频
+**定位**：简化版，聚焦「本周回顾 + 下周展望」，保持简短便于快速浏览。正文结构见模板文件的「周报正文示例」。
 
 ### 3. 月报（monthly）
 
 **适用场景**：按月生成（由用户手动请求，或由外部自动化任务定时调用），总结一个月的学习情况
 
-**包含内容**（完整版，参照原周报详细结构，不含「下月复习计划」）：
-- 核心数据概览（学习天数、时长、批改题量、平均正确率、薄弱点数量）
-- 各科表现对比与趋势
-- 正确率趋势图
-- 薄弱点分析（新增 / 改进 / 待巩固）
-- 错误类型分布
-- 目标进度对比（来自 `profile.md`）
-- 个性化建议（复习重点、视频推荐、练习题）
+**定位**：完整版，用于月度复盘，含目标进度对比（数据来自 `profile.md`）；不含「下月复习计划」。正文结构见模板文件的「月报正文示例」。
 
 ### 4. 专项报告（special）
 
@@ -182,21 +173,53 @@
 生成报告并写入文件后，按以下规则决定是否推送到外部系统：
 
 - **检测环境变量 `STUDYBUDDY_REPORT_WEBHOOK`**：
- - **变量存在且非空**：将报告**正文**（不含 Frontmatter）以 HTTP `POST` 方式发送到该地址。推荐请求体格式：
-     ```
-     POST {STUDYBUDDY_REPORT_WEBHOOK}
-     Content-Type: application/json
-
-     {"content": "<报告正文 Markdown 内容>"}
-     ```
-     - 可通过 `execute_command` 执行 `curl` 完成推送。推送前需剥离报告文件开头的 Frontmatter（即两个 `---` 分隔符之间的元数据块），只保留正文内容，例如：
-       ```bash
-       curl -sS -X POST -H "Content-Type: application/json" \
-         -d "{\"content\":\"$(awk 'BEGIN{skip=0} /^---$/{if(skip==0){skip=1;next} else if(skip==1){skip=2;next}} skip==2{print}' '<报告文件路径>')\"}" \
-         "$STUDYBUDDY_REPORT_WEBHOOK"
-       ```
+  - **变量存在且非空**：将报告**正文**（不含 Frontmatter）以 HTTP `POST` 方式发送到该地址。
   - **变量不存在或为空**：**安静跳过**——不推送、不向用户输出任何与此相关的提示。
 - **失败处理**：推送失败仅记录日志，不影响报告已生成与落盘，也不阻塞主流程。
+
+#### 推送契约
+
+```
+POST {STUDYBUDDY_REPORT_WEBHOOK}
+Content-Type: application/json
+
+{"content": "<报告正文 Markdown>"}
+```
+
+两条必须满足的要求：
+
+1. **剥离 Frontmatter**：只发送正文，即跳过文件开头两个 `---` 分隔符之间的元数据块。
+2. **用真正的 JSON 序列化器编码正文**。报告正文必然是多行文本，且常含 `"`、`\`、换行；这些字符在 JSON 字符串中必须转义。**严禁用字符串拼接或 shell 变量插值拼出请求体**——换行符在 JSON 字符串里非法，直接拼接会让每一次推送都发出格式错误的请求体。
+
+#### 各环境的实现方式
+
+Agent 应根据当前环境可用的能力任选其一，不绑定特定 shell 或工具名：
+
+**PowerShell**（`ConvertTo-Json` 负责转义）：
+```powershell
+$body = @{ content = (Get-Content '<报告文件路径>' -Raw -Encoding UTF8) -replace '(?s)\A---\r?\n.*?\r?\n---\r?\n' } | ConvertTo-Json -Compress
+Invoke-RestMethod -Uri $env:STUDYBUDDY_REPORT_WEBHOOK -Method Post -ContentType 'application/json' -Body $body
+```
+
+> [!WARNING]
+> `-Encoding UTF8` **不可省略**。Windows PowerShell 5.1 的 `Get-Content` 默认按系统 ANSI 代码页读取，报告正文中的中文会变成乱码后再被推送出去（且因为 JSON 本身合法，接收端不会报错，只会静默收到乱码）。
+
+**Python**（`json.dumps` 负责转义）：
+```python
+import json, os, re, urllib.request
+text = re.sub(r'\A---\n.*?\n---\n', '', open('<报告文件路径>', encoding='utf-8').read(), flags=re.S)
+data = json.dumps({'content': text}).encode('utf-8')
+req = urllib.request.Request(os.environ['STUDYBUDDY_REPORT_WEBHOOK'], data=data,
+                             headers={'Content-Type': 'application/json'})
+urllib.request.urlopen(req)
+```
+
+**curl + jq**（`jq -Rs` 负责转义）：
+```bash
+sed -e '1{/^---$/{:a;N;/\n---$/!ba;d}}' '<报告文件路径>' \
+  | jq -Rs '{content: .}' \
+  | curl -sS -X POST -H "Content-Type: application/json" --data-binary @- "$STUDYBUDDY_REPORT_WEBHOOK"
+```
 
 ---
 

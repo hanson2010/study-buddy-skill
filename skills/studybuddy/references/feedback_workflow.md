@@ -10,7 +10,7 @@
 
 1. **OCR 识别完成**：已获得完整的报告内容（文本或结构化数据）
 2. **内容完整性**：考试名称、日期、成绩数据等关键信息完整
-3. **图片引用记录**：`image_path` 已正确记录，方便回溯查看原始报告
+3. **图片引用记录**：`source_path` 已正确记录，方便回溯查看原始报告
 
 当识别失败或不完整时：
 - 提示用户图片模糊，请求重新上传
@@ -20,7 +20,7 @@
 
 ---
 
-## 一、报告类型
+## 二、报告类型
 
 ### 1. 成绩分析报告（score_report）
 
@@ -46,7 +46,7 @@
 
 ---
 
-## 二、报告分析流程
+## 三、报告分析流程
 
 ### 1. 数据提取与结构化
 
@@ -134,53 +134,53 @@
 
 ---
 
-## 三、报告文件 Frontmatter 模板
+## 四、报告文件 Frontmatter 模板
 
 ### 成绩分析报告
 
 ```yaml
 ---
 date: YYYY-MM-DD
-subject: report
+doc_type: report      # 跨学科文档，不属于任何单一学科，故不设 subject
 topic: 成绩分析
 report_type: score_report
 exam_name: [考试名称]
 exam_date: [YYYY-MM-DD]
 grade: [年级]
 class: [班级]
-image_path:  # OCR识别的原始图片路径
+source_path:  # OCR识别的原始图片路径
 scores:
-  chinese:
+  语文:
     score: [分数]
     full_score: [满分]
     ranking: [排名]
     class_avg: [班级平均分]
     grade_avg: [年级平均分]
-  math:
+  数学:
     score: [分数]
     full_score: [满分]
     ranking: [排名]
     class_avg: [班级平均分]
     grade_avg: [年级平均分]
-  english:
+  英语:
     score: [分数]
     full_score: [满分]
     ranking: [排名]
     class_avg: [班级平均分]
     grade_avg: [年级平均分]
-  physics:
+  物理:
     score: [分数]
     full_score: [满分]
     ranking: [排名]
     class_avg: [班级平均分]
     grade_avg: [年级平均分]
-  chemistry:
+  化学:
     score: [分数]
     full_score: [满分]
     ranking: [排名]
     class_avg: [班级平均分]
     grade_avg: [年级平均分]
-  biology:
+  生物:
     score: [分数]
     full_score: [满分]
     ranking: [排名]
@@ -206,7 +206,7 @@ topic: 卷面分析
 report_type: subject_report
 exam_name: [考试名称]
 exam_date: [YYYY-MM-DD]
-image_path:  # OCR识别的原始图片路径
+source_path:  # OCR识别的原始图片路径
 score: [分数]
 full_score: [满分]
 score_rate: [得分率]
@@ -248,7 +248,7 @@ weak_points:
 
 ---
 
-## 四、与 _index.md 的集成规则
+## 五、与 _index.md 的集成规则
 
 ### 成绩记录更新
 
@@ -274,7 +274,7 @@ weak_points:
 
 ---
 
-## 五、输出格式
+## 六、输出格式
 
 ### 成绩分析报告输出
 
@@ -413,7 +413,7 @@ weak_points:
 
 ---
 
-## 六、使用示例
+## 七、使用示例
 
 ### 输入示例1：成绩分析报告
 ```text

@@ -144,7 +144,7 @@ college_name: [高校名称]
 college_code: [院校代码]
 data_type: admission_info  # admission_info / admission_lines / scores_distribution / plan
 academic_year: [招生年度]
-source_file: raw/YYYY/MM/<原始文件名>
+source_path: raw/YYYY/MM/<原始文件名>
 ---
 
 # [高校名称] [招生年度] 招生信息
@@ -185,7 +185,7 @@ date: YYYY-MM-DD
 data_type: scores_distribution
 province: [省份]
 year: [年份]
-source_file: raw/YYYY/MM/<原始文件名>
+source_path: raw/YYYY/MM/<原始文件名>
 ---
 
 # [省份] [年份]年高考分数分布
@@ -230,7 +230,7 @@ province: [省份]
 subject_type: [物理类 / 历史类]
 batch: [本科批 / 本科提前批 / 特殊类型招生批]
 year: [年份]
-source_file: raw/YYYY/MM/<原始文件名>
+source_path: raw/YYYY/MM/<原始文件名>
 ---
 
 # [省份] [年份]年录取投档线（[物理类/历史类]·[批次]）
@@ -258,7 +258,7 @@ source_file: raw/YYYY/MM/<原始文件名>
 date: YYYY-MM-DD
 data_type: gap_analysis
 target_year: [高考年份]
-source_file: profile.md
+source_path: profile.md
 ---
 
 # 目标差距分析报告
@@ -283,7 +283,7 @@ source_file: profile.md
 - 平均每天需提升 [分数] 分
 ```
 
-## 五、colleges 目录结构
+## 四、colleges 目录结构
 
 ```
 <STUDYBUDDY_DATA_DIR>/
@@ -327,7 +327,7 @@ source_file: profile.md
 
 ---
 
-## 七、操作概要记入 log 文件
+## 五、操作概要记入 log 文件
 
 每次执行目标对齐流程后，必须将操作概要记入 `output/YYYY/MM/YYYY-MM-DD-log.md` 文件：
 
@@ -342,7 +342,7 @@ source_file: profile.md
 
 ---
 
-## 八、使用示例
+## 六、使用示例
 
 ### 输入示例1：设定目标
 ```text
