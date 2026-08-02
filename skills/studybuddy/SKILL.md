@@ -188,6 +188,7 @@ description: "高中生AI学习伴侣，覆盖语文/数学/英语/物理/化学
 │   ├── _index.md         # 高校资料索引
 │   └── YYYY/             # 按年份归档
 │       └── YYYY-MM-DD-<slug>.md # 示例：2026-07-12-peking-university.md
+├── input/                # 待导入资料暂存区（用户可预先放入文件，Agent 按需扫描导入；成功导入的文件会被自动删除，详见 references/ingest_workflow.md）
 ├── raw/                  # 原始数据（图片等，按年月归档）
 │   ├── YYYY/
 │   │   └── MM/
