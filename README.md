@@ -70,6 +70,10 @@ mkdir -p .trae/skills/studybuddy
 cp -r skills/studybuddy/* .trae/skills/studybuddy/
 ```
 
+### 建议：合并 AGENTS 约定
+
+安装完成后，建议将 [`skills/studybuddy/templates/AGENTS.md.template`](skills/studybuddy/templates/AGENTS.md.template) 的内容合并进你项目根目录的 `AGENTS.md`（或 `CLAUDE.md`）。这样 agent 在 StudyBuddy 被显式触发之前也能了解 `STUDYBUDDY_DATA_DIR` 等约定，例如被要求直接读写学习数据目录时。
+
 ---
 
 ## 💾 数据存储
@@ -99,3 +103,4 @@ cp -r skills/studybuddy/* .trae/skills/studybuddy/
 - [essay_workflow.md](skills/studybuddy/references/essay_workflow.md) — 语文作文批改工作流
 - [feedback_workflow.md](skills/studybuddy/references/feedback_workflow.md) — 成绩反馈工作流
 - [report_workflow.md](skills/studybuddy/references/report_workflow.md) — 学情追踪工作流
+- [AGENTS.md.template](skills/studybuddy/templates/AGENTS.md.template) — 安装后建议合并进你项目 AGENTS.md 的技能约定

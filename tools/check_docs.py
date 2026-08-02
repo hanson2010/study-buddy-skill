@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 # 扫描范围：技能本体 + 仓库级说明文档
-TARGETS = ["skills", "instructions", "README.md"]
+TARGETS = ["skills", "AGENTS.md", "CLAUDE.md", "README.md"]
 
 SUBJECTS = {"语文", "数学", "英语", "物理", "化学", "生物"}
 SUBJECT_PLACEHOLDERS = {"[学科]"}

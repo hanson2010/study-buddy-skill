@@ -1,0 +1,9 @@
+# StudyBuddy 技能约定
+
+> 本片段随 StudyBuddy 技能一起分发。安装技能后，建议将以下内容合并进你项目根目录的
+> `AGENTS.md`（或 `CLAUDE.md`），这样 agent 在 StudyBuddy 被显式触发之前也能感知这些约定
+> ——例如被要求直接读写学习数据目录时。完整行为规范仍以已安装技能的 `SKILL.md` 为唯一权威来源。
+
+- **环境变量 `STUDYBUDDY_DATA_DIR`**：StudyBuddy 的所有学习数据（`profile.md`、`_index.md`、`subjects/`、`output/` 等）都存储在该变量指定的目录。任何读写学习数据前，agent 必须确认该变量已设置；未设置时应提醒用户设置后再继续，不得自行选用默认路径（如 `~/.studybuddy/`）。
+- **可选环境变量 `STUDYBUDDY_REPORT_WEBHOOK`**：设置后，学情报告（日报/周报/月报/专项报告）落盘后会自动 POST 到该地址；未设置则安静跳过。
+- **StudyBuddy 不分发脚本**：技能只处理文本内容，OCR / 格式转换等非文本内容转换需交由环境中已有能力或其他 skill 完成，边界定义见技能自带的 `references/ingest_workflow.md`。
