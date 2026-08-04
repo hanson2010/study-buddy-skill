@@ -21,12 +21,22 @@ ROOT = Path(__file__).resolve().parent.parent
 # 扫描范围：技能本体 + 仓库级说明文档
 TARGETS = ["skills", "AGENTS.md", "CLAUDE.md", "README.md"]
 
-SUBJECTS = {"语文", "数学", "英语", "物理", "化学", "生物"}
-SUBJECT_PLACEHOLDERS = {"[学科]"}
+# 高考的封闭学科集合，覆盖 3+3 与 3+1+2 两种模式。
+# 九科是枚举上限；单个学生实际启用哪几科由其选科组合决定（见 SKILL.md「启用学科」）。
+SUBJECTS = {
+    "语文", "数学", "英语",           # 必考
+    "物理", "化学", "生物",           # 理科选考
+    "政治", "历史", "地理",           # 文科选考
+}
+SUBJECT_PLACEHOLDERS = {"[学科]", "[选考1]", "[选考2]", "[选考3]"}
 
 # 「这份资料来自哪个原始文件」统一用 source_path
 CANONICAL_SOURCE_KEY = "source_path"
 DEPRECATED_SOURCE_KEYS = {"image_path", "source_file"}
+
+# 编译连接键：raw/notes 记录用复数数组 topics，单值 topic 只允许出现在知识点档案里
+CANONICAL_TOPICS_KEY = "topics"
+TOPIC_SINGULAR_ALLOWED_FILES = {"templates/topic_templates.md"}
 
 CN_NUMERALS = "一二三四五六七八九十"
 
@@ -43,11 +53,19 @@ RE_SOURCE_KEY = re.compile(r"^\s*(" + "|".join(sorted(DEPRECATED_SOURCE_KEYS)) +
 RE_SCRIPT_REF = re.compile(r"[\w./\\-]+\.py\b")
 RE_URL = re.compile(r"https?://[^\s)\]、，。`\"'>]+")
 RE_LOG_PATH = re.compile(r"[\w/<>-]*YYYY-MM-DD-log\.md")
-# 原始资料目录只有 raw/YYYY/MM/ 一种写法
-RE_RAW_PATH = re.compile(r"\braw/(?!YYYY/MM/)[\w/<>-]*")
+# 源层只有 raw/sources/YYYY/MM/ 与 raw/notes/YYYY/MM/ 两种写法
+RE_RAW_PATH = re.compile(r"\braw/(?!(?:sources|notes)/YYYY/MM/)[\w/<>-]*")
+RE_RAW_REAL_DATE = re.compile(r"raw/(?:sources|notes)/\d{4}/\d{2}/[\w.-]*")
+# 编译层不得出现日期目录：按日期归档的记录属于源层 raw/notes/
+# 学科编译层：subjects/<学科>/YYYY/...  升学编译层：colleges/YYYY/...
+RE_LEGACY_SUBJECT_PATH = re.compile(r"subjects/[^/\s`）、，。]+/(?:YYYY|\d{4})\b[\w/<>-]*")
+RE_LEGACY_COLLEGE_PATH = re.compile(r"colleges/(?:YYYY|\d{4})\b[\w/<>-]*")
+RE_TOPIC_SINGULAR = re.compile(r"^\s*topic:\s")
 
 CANONICAL_LOG_PATH = "output/YYYY/MM/YYYY-MM-DD-log.md"
-CANONICAL_RAW_PATH = "raw/YYYY/MM/"
+CANONICAL_RAW_PATHS = ("raw/sources/YYYY/MM/", "raw/notes/YYYY/MM/")
+# 目录树里单独出现的节点，不是完整路径
+RAW_PATH_NODES = {"raw/", "raw/sources/", "raw/notes/"}
 
 
 def cn_to_int(s: str) -> int:
@@ -187,7 +205,7 @@ def check_source_keys(path: Path, lines, f: Findings) -> None:
 
 
 def check_paths(path: Path, lines, f: Findings) -> None:
-    """5. 日志路径与原始资料路径各只有一种写法。"""
+    """5. 日志路径与源层路径各只有固定几种写法。"""
     for num, line, _ in lines:
         for hit in RE_LOG_PATH.findall(line):
             if hit == "YYYY-MM-DD-log.md":
@@ -197,17 +215,50 @@ def check_paths(path: Path, lines, f: Findings) -> None:
                       f"日志路径「{hit}」应为「{CANONICAL_LOG_PATH}」")
 
         for hit in RE_RAW_PATH.findall(line):
-            if hit == "raw/":
-                continue  # 目录树里单独出现的 raw/ 节点可接受
-            # 示例路径用真实年月（如 raw/2026/07/photo.jpg）同样合法
-            if re.fullmatch(r"raw/\d{4}/\d{2}/[\w.-]*", hit):
+            if hit in RAW_PATH_NODES:
+                continue  # 目录树里单独出现的节点可接受
+            # 示例路径用真实年月（如 raw/sources/2026/07/photo.jpg）同样合法
+            if RE_RAW_REAL_DATE.fullmatch(hit):
                 continue
-            f.add("原始资料路径", path, num,
-                  f"原始资料路径「{hit}」应为「{CANONICAL_RAW_PATH}」形式")
+            expected = " 或 ".join(CANONICAL_RAW_PATHS)
+            f.add("源层路径", path, num,
+                  f"源层路径「{hit}」应为「{expected}」形式")
+
+
+def check_compile_layer(path: Path, lines, f: Findings) -> None:
+    """6. 编译层不得按日期分目录——那是源层 raw/notes/ 的职责。
+
+    这是「源层与编译层分离」这条不变式的机械断言：迁移遗漏或规则回潮
+    都会在文档里留下「学科目录/年份」或「colleges/年份」形式的路径。
+
+    注意本检查按字面匹配，因此文档里不能写出反例的字面形式，否则会检查到
+    自己；需要举例时改用 <年>/<月> 这类中文占位符。
+    """
+    for num, line, _ in lines:
+        for pattern in (RE_LEGACY_SUBJECT_PATH, RE_LEGACY_COLLEGE_PATH):
+            for hit in pattern.findall(line):
+                f.add("编译层日期目录", path, num,
+                      f"「{hit}」把日期目录放进了编译层；按日期归档的记录应在 raw/notes/YYYY/MM/ 下")
+
+
+def check_topics_key(path: Path, lines, f: Findings) -> None:
+    """7. 编译连接键统一用复数数组 topics。
+
+    单值 topic: 会让一道命中多个知识点的题只编译进一个档案，其余档案
+    永远收不到这条记录——这是最难靠肉眼发现的一类缺陷。
+    知识点档案本身是围绕单个知识点组织的，故其模板文件豁免。
+    """
+    rel = path.relative_to(ROOT).as_posix()
+    if any(rel.endswith(allowed) for allowed in TOPIC_SINGULAR_ALLOWED_FILES):
+        return
+    for num, line, _ in lines:
+        if RE_TOPIC_SINGULAR.match(line):
+            f.add("frontmatter 键名", path, num,
+                  f"单值「topic:」应改为数组「{CANONICAL_TOPICS_KEY}:」")
 
 
 def check_platform_urls(files: list[Path], f: Findings) -> None:
-    """6. 同一个平台名不得对应多个不同 URL。"""
+    """8. 同一个平台名不得对应多个不同 URL。"""
     urls: dict[str, dict[str, tuple[Path, int]]] = {n: {} for n in PLATFORMS}
     for path in files:
         text = path.read_text(encoding="utf-8")
@@ -242,6 +293,8 @@ def main() -> int:
         check_subject_enum(path, lines, f)
         check_source_keys(path, lines, f)
         check_paths(path, lines, f)
+        check_compile_layer(path, lines, f)
+        check_topics_key(path, lines, f)
     check_platform_urls(files, f)
 
     print(f"check_docs: 已检查 {len(files)} 个文件。")

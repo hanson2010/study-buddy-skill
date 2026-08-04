@@ -4,6 +4,8 @@
 > `AGENTS.md`（或 `CLAUDE.md`），这样 agent 在 StudyBuddy 被显式触发之前也能感知这些约定
 > ——例如被要求直接读写学习数据目录时。完整行为规范仍以已安装技能的 `SKILL.md` 为唯一权威来源。
 
-- **环境变量 `STUDYBUDDY_DATA_DIR`**：StudyBuddy 的所有学习数据（`profile.md`、`_index.md`、`subjects/`、`output/` 等）都存储在该变量指定的目录。任何读写学习数据前，agent 必须确认该变量已设置；未设置时应提醒用户设置后再继续，不得自行选用默认路径（如 `~/.studybuddy/`）。
+- **环境变量 `STUDYBUDDY_DATA_DIR`**：StudyBuddy 的所有学习数据（`profile.md`、`_index.md`、`raw/`、`subjects/`、`output/` 等）都存储在该变量指定的目录。任何读写学习数据前，agent 必须确认该变量已设置；未设置时应提醒用户设置后再继续，不得自行选用默认路径（如 `~/.studybuddy/`）。
 - **可选环境变量 `STUDYBUDDY_REPORT_WEBHOOK`**：设置后，学情报告（日报/周报/月报/专项报告）落盘后会自动 POST 到该地址；未设置则安静跳过。
-- **StudyBuddy 不分发脚本**：技能只处理文本内容，OCR / 格式转换等非文本内容转换需交由环境中已有能力或其他 skill 完成，边界定义见技能自带的 `references/ingest_workflow.md`。
+- **源层与编译层分离**：数据分两层——`raw/`（源层：`raw/sources/` 存原始上传件，`raw/notes/` 存按日期归档的加工记录，**只追加不改写**）与 `subjects/`（编译层：知识点档案与索引，**只由技能的编译流程生成，可全量重建**）。直接读写学习数据时，新内容一律写入 `raw/notes/`，不要手工编辑 `subjects/` 下的文件——那会在下次重编时被覆盖。
+- **StudyBuddy 不分发脚本**：技能只处理文本内容，OCR / 格式转换等非文本内容转换需交由环境中已有能力或其他 skill 完成，边界定义见技能自带的 `references/ingest_subject_workflow.md`。
+- **Python 虚拟环境**：项目内如需运行 Python 脚本（如 `tools/` 下的工具），应在项目根目录下的虚拟环境（如 `.venv/`）中执行，不要污染全局 Python 环境。虚拟环境不存在时应提醒用户先创建（如 `python -m venv .venv`）并激活后再安装依赖、运行脚本。

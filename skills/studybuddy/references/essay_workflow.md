@@ -117,7 +117,8 @@
 - **结构优化**：建议调整文章结构和段落顺序
 
 ### 5. 范文对照
-- **范文选择**：从 `subjects/语文/` 中查找同题或同类题目的 `model_essay`（作文范文）和 `classmate_essay`（同学范文）
+- **范文选择**：先查相关知识点档案（如 `subjects/语文/topics/essay-thesis-framing.md`）的「已用资源」，再从 `raw/notes/` 中查找同题或同类题目的 `model_essay`（作文范文）和 `classmate_essay`（同学范文）
+  > 参考材料虽然不计入错因史，但**会被编译进档案的「考点要义」与「已用资源」**（核心规则 6 的允许侧），所以档案通常已经收敛了可用的范文线索，不必每次遍历 `raw/notes/`
 - **对比分析**：对比学生作文与范文的差距，分析范文的优点
 - **借鉴建议**：建议学生借鉴范文的哪些方面
 
@@ -132,15 +133,19 @@
 
 ```yaml
 ---
-date: YYYY-MM-DD
+date: YYYY-MM-DD              # 事件日期（作文日期），决定目录与文件名
+ingested_at: YYYY-MM-DD       # 导入日期，仅作审计，不参与路径
 subject: 语文
-topic: 作文
+topics:                        # 必填数组：本篇暴露的写作知识点，与下方 weak_points 对应
+  - 作文审题
+  - 论证方法
+source_type: homework          # exam（考场作文）/ homework（平时作文）/ generated
 reference_type:  # 空或 standard_answer/model_essay/classmate_essay
 essay_scope: major  # micro（微写作，满分10）/ major（大作文，满分50）
 essay_type: argumentation  # argumentation（议论文）/ narration（记叙文）/ application（应用文）
 title: [作文标题]
 word_count: [字数]
-source_path:  # OCR识别的原始图片路径，如 raw/YYYY/MM/photo.jpg
+source_path:  # 原始图片路径，如 raw/sources/YYYY/MM/photo.jpg
 score: [得分]
 full_score: 50  # micro 为 10，major 为 50；必须与 essay_scope 一致
 score_is_estimate: false  # 判为二类及以下（无官方区间）时置 true
@@ -163,21 +168,35 @@ weak_points:
 
 ---
 
-## 四、与 _index.md 的集成规则
+## 四、归档与编译
 
-### 作文薄弱点记录
-语文 `_index.md` 的薄弱点表中，作文相关薄弱点按以下维度记录：
+### 归档位置
 
-| 知识点 | 错误次数 | 最近错误日期 | 状态 |
-|--------|----------|--------------|------|
-| 审题偏差 | [N] | [YYYY-MM-DD] | ⚠️ 待巩固 |
-| 素材陈旧 | [N] | [YYYY-MM-DD] | ⚠️ 待巩固 |
-| 论证单一 | [N] | [YYYY-MM-DD] | ⚠️ 待巩固 |
-| 语言平淡 | [N] | [YYYY-MM-DD] | ✅ 已掌握 |
+作文批改记录写入 `raw/notes/YYYY/MM/<YYYY-MM-DD>-chinese-<descriptive-slug>.md`（学科短码为 `chinese`）。
 
-### 更新时机
-- **每次作文批改后**：更新语文 `_index.md` 的薄弱点表（新增或更新作文相关薄弱点）
-- **每次作文复习后**：连续 3 次同类问题改善，状态从 ⚠️ 待巩固 改为 ✅ 已掌握
+### 作文薄弱点作为知识点
+
+作文薄弱点与其他学科的知识点同等对待，写入 `topics` 数组后由编译流程生成独立档案，`topic_kind` 一律为 **`answer_pattern`**：
+
+| 薄弱点 | 档案 slug 示例 |
+|--------|----------------|
+| 作文审题 | `essay-thesis-framing` |
+| 素材运用 | `essay-material-usage` |
+| 论证方法 | `essay-argumentation` |
+| 语言表达 | `essay-language-quality` |
+
+> **为什么是 `answer_pattern` 而不是默认档**：作文失分不是"错"——没有标准答案可对，也归不进「概念不清/计算失误/审题错误/方法不当」四类。它是**要点不全、结构不对**，所以档案第二段是**失分点记录**（日期／题目／得分／漏掉的得分点／结构问题），追加段是**得分点清单与范例**（该题型的标准结构 + 一份对照范文片段）。模板见 [topic_templates.md](../templates/topic_templates.md) 第七节。
+
+### 触发增量编译
+
+写入 `raw/notes/` 后，对 `topics` 中每个知识点执行增量编译（见 [compile_subject_workflow.md](compile_subject_workflow.md)）：
+
+- **个人错因史**：本次批改暴露的问题按错因类型记入（如「素材陈旧」归入「素材运用」档案）
+- **已用资源**：本次对照的范文记入，供下次批改直接复用
+- **状态与证据强度**：考场作文标 `exam`，平时作文标 `homework`；连续 3 次同类问题改善且证据 ≥ medium 才可转为 ✅ 已掌握
+- **回填索引**：更新语文 `_index.md` 的知识点索引；本篇暴露的薄弱点 `error_count ≥ 1`，同步更新薄弱点索引
+
+> **参考材料例外**：`reference_type` 非空（范文、同学范文）的记录不进入「个人错因史」、不改变状态，但**必须**编译进「考点要义」与「已用资源」。
 
 ---
 

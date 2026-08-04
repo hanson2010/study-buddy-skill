@@ -50,13 +50,24 @@
 
 ---
 
-## 三、文件 Frontmatter 模板
+## 三、归档与 Frontmatter 模板
+
+### 归档位置
+
+古诗文学习记录写入 `raw/notes/YYYY/MM/<YYYY-MM-DD>-chinese-<descriptive-slug>.md`（学科短码为 `chinese`，slug 取作品名，如 `2026-07-12-chinese-denggao.md`）。
+
+### Frontmatter 模板
 
 ```yaml
 ---
-date: YYYY-MM-DD
+date: YYYY-MM-DD              # 事件日期，决定目录与文件名
+ingested_at: YYYY-MM-DD       # 导入日期，仅作审计，不参与路径
 subject: 语文
-topic: 古诗文
+topics:                        # 必填数组：能力点 + 篇目，两类都写
+  - 实词理解                   # 能力点 → problem_solving 档案
+  - 意象鉴赏                   # 能力点 → problem_solving 档案
+  - 默写准确性                 # 能力点 → problem_solving 档案
+  - 登高                       # 篇目   → memory_item 档案（走艾宾浩斯间隔重复）
 content_type: classical_poem  # classical_poem（古诗词）/ classical_prose（文言文）
 title: [作品标题]
 author: [作者]
@@ -66,31 +77,79 @@ tags:
   - [标签2]
 difficulty: [基础/提高/挑战]
 learning_progress: [背诵/理解/鉴赏/应用]
-source_path:  # 原始资料路径（如有），如 raw/YYYY/MM/photo.jpg
-weak_points:
-  - [薄弱点1]
-  - [薄弱点2]
+source_type: generated         # 本工作流的默写检测一律为 generated；来自作业/考试的默写标 homework/exam
+source_path:  # 原始资料路径（如有），如 raw/sources/YYYY/MM/photo.jpg
 ---
 ```
 
+> [!IMPORTANT]
+> **`topics` 里同时写能力点与篇目，两者都要写**：
+>
+> - **能力点**（实词理解、意象鉴赏、默写准确性…）→ 建为 `topic_kind: problem_solving` 档案。档案要收敛的是"这个学生在意象鉴赏上反复出什么问题"，**能力点必须写全，不能只写篇目**。
+> - **篇目**（登高、赤壁赋…）→ 建为 `topic_kind: memory_item` 档案。"《登高》默写老是错哪几个字"只有**按篇聚合**才有诊断价值——「渚」「潦」两个字反复写错，是形近字混淆，不是"意象鉴赏不行"。
+>
+> 两者服务两个不同的问题，缺一不可。作品名同时保留在 `title` 字段（供检索与展示）。
+>
+> **不另开 `memory_items:` 数组键**——学科编译连接键统一为数组 `topics:`（核心规则 4），这是 `tools/check_docs.py` 机械断言的不变式；篇目与能力点靠 `topic_kind` 区分，不靠第二个键。
+
 ---
 
-## 四、与 _index.md 的集成规则
+## 四、归档与编译
 
-### 古诗文薄弱点记录
-语文 `_index.md` 的薄弱点表中，古诗文相关薄弱点按以下维度记录：
+### 古诗文能力点（`topic_kind: problem_solving`）
 
-| 知识点 | 错误次数 | 最近错误日期 | 状态 |
-|--------|----------|--------------|------|
-| 实词理解 | [N] | [YYYY-MM-DD] | ⚠️ 待巩固 |
-| 虚词用法 | [N] | [YYYY-MM-DD] | ⚠️ 待巩固 |
-| 翻译技巧 | [N] | [YYYY-MM-DD] | ⚠️ 待巩固 |
-| 意象鉴赏 | [N] | [YYYY-MM-DD] | ✅ 已掌握 |
-| 默写错字 | [N] | [YYYY-MM-DD] | ⚠️ 待巩固 |
+古诗文薄弱点与其他学科的知识点同等对待，写入 `topics` 后由编译生成独立档案：
+
+| 能力点 | 档案 slug 示例 |
+|--------|----------------|
+| 实词理解 | `content-word-comprehension` |
+| 虚词用法 | `function-word-usage` |
+| 特殊句式 | `special-sentence-patterns` |
+| 翻译技巧 | `classical-translation` |
+| 意象鉴赏 | `imagery-appreciation` |
+| 默写准确性 | `recitation-accuracy` |
+
+> **粒度提醒**：能力点要过建档三问。「文言虚词用法」是一个档案；「虚词『之』的取独用法」体量过小、是它的一个义项，**并入上位点**，不单独建档（见 [topic_templates.md](../templates/topic_templates.md) 第一节第 3 小节）。
+
+### 古诗文篇目（`topic_kind: memory_item`）
+
+每个要求背诵的篇目建一份档案，slug 取作品名的拼音或英文：
+
+| 篇目 | 档案 slug 示例 |
+|------|----------------|
+| 登高 | `denggao` |
+| 赤壁赋 | `chibifu` |
+| 蜀道难 | `shudaonan` |
+
+篇目档案的正文第二段是**回忆记录**（日期／形式／结果／错在哪／来源类型），追加段保存**原文与注释**，模板见 [topic_templates.md](../templates/topic_templates.md) 第七节。
+
+> **一篇古文是一个合格的档案**：它可以独立检测（默写一遍）、会反复出错（同样几个字）、有内容可沉淀（全文与注释）——三问全过。这与"一个虚词义项不该建档"并不矛盾：前者体量足够且有持续积累的空间，后者只是上位点的一个切面。
+
+### 触发增量编译
+
+写入 `raw/notes/` 后，对 `topics` 中每一项（能力点与篇目）执行增量编译（见 [compile_subject_workflow.md](compile_subject_workflow.md)）：
+
+**能力点档案（`problem_solving`）**：
+
+- **考点要义**：字词释义、句式规律等可复用的结论并入档案
+- **个人错因史**：翻译失分、鉴赏答偏等记入，注明具体是哪个作品的哪一句
+- **已用资源**：本次用到的背诵技巧与练习记录
+
+**篇目档案（`memory_item`）**：
+
+- **考点要义**：作品的主旨、艺术手法要点
+- **回忆记录**（第二段）：本次默写的形式（全篇/填空/补句）、结果、**具体错在哪几个字或哪一句**
+- **原文与注释**（追加段）：全文与关键字词释义，让下次默写检测无需回翻 `raw/notes/`
+- **间隔重复**：按回忆结果推算 `next_review`——全对进下一轮（1/3/7/14/30 天），有错字回退一轮，连错两次回到第 1 轮（规则见 compile_subject_workflow.md 第五节第 4 点）
+
+**两类共同**：
+
+- **状态与证据强度**：默写检测多为 `generated`，**不足以**判定为 ✅ 已掌握，最高到 🟡 疑似掌握；来自考试的默写题才是 `exam` 证据
+- **回填索引**：更新语文 `_index.md` 的知识点索引；出过错的项 `error_count ≥ 1`，同步更新薄弱点索引
 
 ### 更新时机
-- **每次学习后**：更新语文 `_index.md` 的薄弱点表（新增或更新古诗文相关薄弱点）
-- **每次默写检测后**：根据检测结果更新薄弱点状态
+- **每次学习后**：写入记录并触发编译
+- **每次默写检测后**：按检测结果重算状态与证据强度
 
 ---
 
@@ -103,6 +162,8 @@ weak_points:
 - **学习内容**：作品标题、作者、学习进度（背诵/理解/鉴赏/应用）
 - **学习时长**：本次学习耗时（分钟）
 - **练习记录**：默写练习题数量、正确率
+- **生成的文件**：`raw/notes/` 中的学习记录路径
+- **编译更新**：刷新的知识点档案及其状态变化
 - **更新的索引**：更新的 `_index.md` 文件及其内容摘要
 
 **记录格式**：
@@ -113,8 +174,10 @@ weak_points:
 - **操作类型**：古诗文学习
 - **学习内容**：杜甫《登高》—背诵与鉴赏
 - **学习时长**：40 分钟
-- **练习记录**：默写 5 题，正确率 80%
-- **更新索引**：subjects/语文/_index.md（更新薄弱点：默写错字）
+- **练习记录**：默写 5 题，正确率 80%（source_type: generated）
+- **生成文件**：raw/notes/2026/07/2026-07-12-chinese-denggao.md
+- **编译更新**：subjects/语文/topics/recitation-accuracy.md（错因史 +1）、subjects/语文/topics/imagery-appreciation.md（考点要义 +1）
+- **更新索引**：subjects/语文/_index.md（薄弱点索引 2 行）
 ```
 
 ---
