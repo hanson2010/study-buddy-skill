@@ -197,17 +197,25 @@
 
 #### 推送契约
 
-```
-POST {STUDYBUDDY_REPORT_WEBHOOK}
-Content-Type: application/json
+请求体格式按地址二选一：
 
-{"content": "<报告正文 Markdown>"}
-```
+| `STUDYBUDDY_REPORT_WEBHOOK` | 请求体 |
+|---|---|
+| 以 `https://oapi.dingtalk.com/robot/send` 开头（钉钉自定义机器人） | `{"msgtype": "markdown", "markdown": {"title": "<标题>", "text": "<报告正文 Markdown>"}}` |
+| 其他地址 | `{"content": "<报告正文 Markdown>"}` |
 
-两条必须满足的要求：
+两种都以 `POST`、`Content-Type: application/json; charset=utf-8` 发送，且必须满足：
 
 1. **剥离 Frontmatter**：只发送正文，即跳过文件开头两个 `---` 分隔符之间的元数据块。
 2. **用真正的 JSON 序列化器编码正文**。报告正文必然是多行文本，且常含 `"`、`\`、换行；这些字符在 JSON 字符串中必须转义。**严禁用字符串拼接或 shell 变量插值拼出请求体**——换行符在 JSON 字符串里非法，直接拼接会让每一次推送都发出格式错误的请求体。
+3. **以 UTF-8 字节发送**，否则中文会在传输中变成乱码。
+
+钉钉的额外规则：
+
+- **`title`** 取正文第一个一级标题（`# ` 开头的行）的文字，没有则用「学情报告」。它显示在钉钉的消息通知里，不可省略。
+- **判定成功看 `errcode`**：钉钉对业务错误也可能返回 HTTP 200，响应体 `errcode` 为 `0` 才算推送成功；非 `0` 时把 `errcode` 与 `errmsg` 记入 log。
+- **机器人安全设置**：「自定义关键词」要求关键词出现在消息里（可设为「学情」，报告标题里都有这两个字）；「加签」需要密钥计算签名，本技能不支持，选「加签」的机器人会拒收。
+- 钉钉的 Markdown 不渲染表格，报告里的表格会以原始的 `|` 文本显示；完整排版以 `output/` 下的报告文件为准。
 
 #### 各环境的实现方式
 
@@ -215,28 +223,56 @@ Agent 应根据当前环境可用的能力任选其一，不绑定特定 shell �
 
 **PowerShell**（`ConvertTo-Json` 负责转义）：
 ```powershell
-$body = @{ content = (Get-Content '<报告文件路径>' -Raw -Encoding UTF8) -replace '(?s)\A---\r?\n.*?\r?\n---\r?\n' } | ConvertTo-Json -Compress
-Invoke-RestMethod -Uri $env:STUDYBUDDY_REPORT_WEBHOOK -Method Post -ContentType 'application/json' -Body $body
+$url  = $env:STUDYBUDDY_REPORT_WEBHOOK
+$text = (Get-Content '<报告文件路径>' -Raw -Encoding UTF8) -replace '(?s)\A---\r?\n.*?\r?\n---\r?\n'
+if ($url.StartsWith('https://oapi.dingtalk.com/robot/send')) {
+  $title = if ($text -match '(?m)^#\s+(.+?)\s*$') { $Matches[1] } else { '学情报告' }
+  $payload = @{ msgtype = 'markdown'; markdown = @{ title = $title; text = $text } }
+} else {
+  $payload = @{ content = $text }
+}
+$body = [Text.Encoding]::UTF8.GetBytes(($payload | ConvertTo-Json -Compress -Depth 3))
+$resp = Invoke-RestMethod -Uri $url -Method Post -ContentType 'application/json; charset=utf-8' -Body $body
+if ($url.StartsWith('https://oapi.dingtalk.com/robot/send') -and $resp.errcode -ne 0) {
+  throw "钉钉推送失败：errcode=$($resp.errcode) errmsg=$($resp.errmsg)"
+}
 ```
 
 > [!WARNING]
-> `-Encoding UTF8` **不可省略**。Windows PowerShell 5.1 的 `Get-Content` 默认按系统 ANSI 代码页读取，报告正文中的中文会变成乱码后再被推送出去（且因为 JSON 本身合法，接收端不会报错，只会静默收到乱码）。
+> `-Encoding UTF8` 与 `UTF8.GetBytes` **都不可省略**。Windows PowerShell 5.1 的 `Get-Content` 默认按系统 ANSI 代码页读取，`Invoke-RestMethod` 收到字符串请求体时也不按 UTF-8 编码——两处任一缺失，中文都会变成乱码后再被推送出去（且因为 JSON 本身合法，接收端不会报错，只会静默收到乱码）。
 
 **Python**（`json.dumps` 负责转义）：
 ```python
 import json, os, re, urllib.request
-text = re.sub(r'\A---\n.*?\n---\n', '', open('<报告文件路径>', encoding='utf-8').read(), flags=re.S)
-data = json.dumps({'content': text}).encode('utf-8')
-req = urllib.request.Request(os.environ['STUDYBUDDY_REPORT_WEBHOOK'], data=data,
-                             headers={'Content-Type': 'application/json'})
-urllib.request.urlopen(req)
+url = os.environ['STUDYBUDDY_REPORT_WEBHOOK']
+text = re.sub(r'\A---\r?\n.*?\r?\n---\r?\n', '', open('<报告文件路径>', encoding='utf-8').read(), flags=re.S)
+dingtalk = url.startswith('https://oapi.dingtalk.com/robot/send')
+if dingtalk:
+    m = re.search(r'^#\s+(.+?)\s*$', text, flags=re.M)
+    payload = {'msgtype': 'markdown', 'markdown': {'title': m.group(1) if m else '学情报告', 'text': text}}
+else:
+    payload = {'content': text}
+req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'),
+                             headers={'Content-Type': 'application/json; charset=utf-8'})
+resp = urllib.request.urlopen(req).read()
+if dingtalk and json.loads(resp).get('errcode') != 0:
+    raise RuntimeError(f'钉钉推送失败：{resp.decode("utf-8")}')
 ```
 
 **curl + jq**（`jq -Rs` 负责转义）：
 ```bash
-sed -e '1{/^---$/{:a;N;/\n---$/!ba;d}}' '<报告文件路径>' \
-  | jq -Rs '{content: .}' \
-  | curl -sS -X POST -H "Content-Type: application/json" --data-binary @- "$STUDYBUDDY_REPORT_WEBHOOK"
+url="$STUDYBUDDY_REPORT_WEBHOOK"
+resp=$(sed -e '1{/^---$/{:a;N;/\n---$/!ba;d}}' '<报告文件路径>' \
+  | jq -Rs --arg url "$url" '
+      if ($url | startswith("https://oapi.dingtalk.com/robot/send"))
+      then {msgtype: "markdown",
+            markdown: {title: ((capture("^#\\s+(?<t>[^\\n]+?)\\s*$") | .t) // "学情报告"), text: .}}
+      else {content: .} end' \
+  | curl -sS -X POST -H "Content-Type: application/json; charset=utf-8" --data-binary @- "$url")
+case "$url" in
+  https://oapi.dingtalk.com/robot/send*)
+    printf '%s' "$resp" | jq -e '.errcode == 0' >/dev/null || echo "钉钉推送失败：$resp" >&2 ;;
+esac
 ```
 
 ---

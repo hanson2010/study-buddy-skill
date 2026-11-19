@@ -120,7 +120,7 @@ cp -r skills/studybuddy/* .trae/skills/studybuddy/
 
 数据存储在环境变量 `STUDYBUDDY_DATA_DIR` 指定的目录中。必须设置该环境变量，否则会提醒用户设置后再继续使用。
 
-可选环境变量 `STUDYBUDDY_REPORT_WEBHOOK`：设置后，生成的学情报告（日报 / 周报 / 月报 / 专项报告）会在落盘后自动 POST 到该地址（请求体为 `{"content": "<报告正文 Markdown>"}`，**不含 Frontmatter**）；**不设置则安静跳过**，不影响报告生成。详见 [report_workflow.md](skills/studybuddy/references/report_workflow.md) 的「报告推送」章节。
+可选环境变量 `STUDYBUDDY_REPORT_WEBHOOK`：设置后，生成的学情报告（日报 / 周报 / 月报 / 专项报告）会在落盘后自动 POST 到该地址，只发正文、**不含 Frontmatter**。钉钉自定义机器人地址（`https://oapi.dingtalk.com/robot/send…`）按钉钉的 markdown 消息格式发送，机器人安全设置须用「自定义关键词」（如「学情」）或 IP 白名单，不支持「加签」；其他地址请求体为 `{"content": "<报告正文 Markdown>"}`。**不设置则安静跳过**，不影响报告生成。详见 [report_workflow.md](skills/studybuddy/references/report_workflow.md) 的「报告推送」章节。
 
 数据目录的完整结构（`profile.md`、`_index.md`、`input/`、`raw/`、`subjects/`、`colleges/`、`archive/`、`output/`）定义在 [SKILL.md 的「数据目录结构」](skills/studybuddy/SKILL.md) 一节。
 
