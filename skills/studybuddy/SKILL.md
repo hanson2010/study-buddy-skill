@@ -34,7 +34,7 @@ input/  →  raw/（源层：只追加，不修改）  →  编译  →  subject
 | **学科族** | `subject` + `topics[]` | `subjects/<学科>/topics/` | **记录驱动（push）**：写入记录 → 编译它命中的知识点 |
 | **升学族** | `colleges[]` / `groups[]` / `majors[]` | `colleges/groups/`、`colleges/majors/` | **目标驱动（pull）**：`profile.md` 的目标列表 → 从全部资料中提取这些目标的数据 |
 
-升学族之所以必须反过来，是因为一份全省投档线表含 800+ 个院校专业组，无法在 frontmatter 枚举，而学生只关心其中 10-30 个。详见 [references/compile_subject_workflow.md](references/compile_subject_workflow.md)（学科族与重编）与 [references/compile_admission_workflow.md](references/compile_admission_workflow.md)（升学族）。
+升学族之所以必须反过来，是因为一份全省投档线表含 800+ 个院校专业组，无法在 frontmatter 枚举，而学生只关心其中 10-30 个。详见 [references/compile_subject_workflow.md](references/compile_subject_workflow.md)（学科族）与 [references/compile_admission_workflow.md](references/compile_admission_workflow.md)（升学族）；重编的编排见 [references/maintain_workflow.md](references/maintain_workflow.md)。
 
 ### 子命令体系
 
@@ -118,7 +118,7 @@ input/  →  raw/（源层：只追加，不修改）  →  编译  →  subject
 
 ### 2. 外部资料导入
 
-`ingest` 是资料进入本技能的**唯一入口**，覆盖学科与升学两个资料族。详细规则见 [references/ingest_subject_workflow.md](references/ingest_subject_workflow.md)。
+`ingest` 是资料进入本技能的**唯一入口**，覆盖学科与升学两个资料族。详细规则见 [references/ingest_subject_workflow.md](references/ingest_subject_workflow.md)（学科资料）与 [references/ingest_admission_workflow.md](references/ingest_admission_workflow.md)（升学资料）。
 
 **学科资料**（课本、讲义、笔记、参考材料）：
 
@@ -173,7 +173,7 @@ input/  →  raw/（源层：只追加，不修改）  →  编译  →  subject
 
 语文作文批改不套用通用的「智能辅导六步法」，走独立流程。详细规则见 [references/essay_workflow.md](references/essay_workflow.md)。
 
-- **评分标准**：按北京卷两种题型评分——大作文 50 分（不少于 700 字，一类文 42-50）、微写作 10 分（不超过 150 字，一类文 8-10）；输出「得分/满分」与档位，不得只给裸分（评分细则见 essay_workflow.md）
+- **评分标准**：按 `profile.md` 的高考省份选用——北京用内置北京卷标准（大作文 50 分，不少于 700 字，一类文 42-50；微写作 10 分，不超过 150 字，一类文 8-10）；其他省份用经 `ingest` 导入的本省评分细则，没有细则时只诊断与升格、不打分不判档。打分时输出「得分/满分」与档位，不得只给裸分（详见 essay_workflow.md 第一节）
 - **批改流程**：审题分析 → 分项评分 → 问题诊断 → 升格建议 → 范文对照 → 片段练习
 - **范文对照**：主动检索同题或同类题目的 `model_essay`（作文范文）和 `classmate_essay`（同学范文）进行对比分析
 - **薄弱点记录**：作文相关薄弱点（如审题偏差、素材陈旧、论证单一）写入 `topics` 数组，编译进语文的知识点档案
@@ -366,8 +366,8 @@ input/  →  raw/（源层：只追加，不修改）  →  编译  →  subject
 
 ### 记忆注入点
 
-- **批改时（KnowPointAgent）**：注入该知识点档案的错因史，自动标记哪些题命中了已知盲区、是否与历史错因同类
-- **问答时（ExplainAgent）**：开口前先检索该学生的知识点档案与 `profile.md` 的辅导偏好，了解讲解风格偏好、近期薄弱点、常犯错误类型，再用个性化方式解答
+- **批改时**：注入该知识点档案的错因史，自动标记哪些题命中了已知盲区、是否与历史错因同类
+- **问答时**：开口前先检索该学生的知识点档案与 `profile.md` 的辅导偏好，了解讲解风格偏好、近期薄弱点、常犯错误类型，再用个性化方式解答
 
 ### 辅导偏好记忆（候选制）
 

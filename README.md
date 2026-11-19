@@ -19,7 +19,7 @@ StudyBuddy 是一个面向高中生的 AI 学习助手，专注于作业批改�
 | `learn` | 知识点学习与巩固 | 学习知识点、复习薄弱点（含视频推荐规则） |
 | `classical` | 古诗文记忆与理解 | 古诗词、文言文的背诵、理解与鉴赏 |
 | `eval` | 作业批改与错题归档 | 上传作业/试卷照片、请求批改错题 |
-| `essay` | 语文作文批改 | 作文图片/文本的批改、评分与升格（北京卷：微写作 10 分 / 大作文 50 分） |
+| `essay` | 语文作文批改 | 作文图片/文本的批改、评分与升格（内置北京卷标准；其他省份按导入的本省评分细则评分，未导入时只批改不打分） |
 | `feedback` | 成绩反馈 | 上传成绩分析报告、单科卷面分析报告 |
 | `report` | 学情追踪 | 生成学习周报/月报、分析学习趋势 |
 | `ask` | 学情提问（只读） | 询问学习状况、薄弱点排序、历史错题回顾、目标差距 |
@@ -120,7 +120,7 @@ cp -r skills/studybuddy/* .trae/skills/studybuddy/
 
 数据存储在环境变量 `STUDYBUDDY_DATA_DIR` 指定的目录中。必须设置该环境变量，否则会提醒用户设置后再继续使用。
 
- 可选环境变量 `STUDYBUDDY_REPORT_WEBHOOK`：设置后，生成的学情报告（日报 / 周报 / 月报 / 专项报告）会在落盘后自动 POST 到该地址（请求体为 `{"content": "<报告正文 Markdown>"}`，**不含 Frontmatter**）；**不设置则安静跳过**，不影响报告生成。详见 [report_workflow.md](skills/studybuddy/references/report_workflow.md) 的「报告推送」章节。
+可选环境变量 `STUDYBUDDY_REPORT_WEBHOOK`：设置后，生成的学情报告（日报 / 周报 / 月报 / 专项报告）会在落盘后自动 POST 到该地址（请求体为 `{"content": "<报告正文 Markdown>"}`，**不含 Frontmatter**）；**不设置则安静跳过**，不影响报告生成。详见 [report_workflow.md](skills/studybuddy/references/report_workflow.md) 的「报告推送」章节。
 
 数据目录的完整结构（`profile.md`、`_index.md`、`input/`、`raw/`、`subjects/`、`colleges/`、`archive/`、`output/`）定义在 [SKILL.md 的「数据目录结构」](skills/studybuddy/SKILL.md) 一节。
 

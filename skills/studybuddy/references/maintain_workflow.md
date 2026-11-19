@@ -59,7 +59,7 @@
 | 2.7 | 升学记录是否有 `credibility` | 缺失则无法执行就业数据分级（与 5.8 互补：5.8 查档案侧是否混入 `questionable`，本项查记录侧是否根本没标） | 中 |
 | 2.8 | `scope: bulk` 记录是否有 `province` 与 `year` | 缺 `province` 无法与高考省份匹配，缺 `year` 无法做超期提示 | 中 |
 | 2.9 | `ingest_type: question_bank` / `syllabus` 的记录是否标了 `topics_role: coverage` | 漏标会让题源里的知识点被误建成档案（多为孤儿档案），或触发 1.2 误报 | 中 |
-| 2.10 | `ingest_type: question_bank` 的记录是否有 `exam_authority`、`exam_year`、`exam_province` | 缺 `exam_authority` 无法判断这份卷子能否作为考点分布证据；缺年份省份会导致跨省跨年混用 | 低 |
+| 2.10 | `ingest_type: question_bank` 的记录是否有 `exam_authority`、`exam_year`、`exam_province`；`syllabus` 的记录是否有 `exam_year`、`exam_province` | 缺 `exam_authority` 无法判断这份卷子能否作为考点分布证据；缺年份省份会导致跨省跨年混用，`essay` 也找不到本省作文评分细则 | 低 |
 | 2.11 | 作答记录（`eval`、`learn` 含练习、`classical` 含检测）是否有 `items`，且每项的 `topics` 都在记录 `topics` 中 | 缺 `items` 则该记录不产生任何作答，档案状态与错误次数都会算错（见 [compile_subject_workflow.md](compile_subject_workflow.md) 第五节第 0 点） | 高 |
 
 > 2.1–2.5 针对学科记录，2.6–2.8 针对升学记录；两族的必填字段不同，不要用学科口径去查升学记录（它本来就没有 `subject`/`topics`）。

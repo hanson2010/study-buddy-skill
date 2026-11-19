@@ -191,7 +191,7 @@
 | `answer_pattern` 答题模板 / 得分点清单 | 题型 | 答题规范档案（`topic_kind: answer_pattern`） | **编译连接键** |
 | `formula_sheet` 公式表 / 方程式汇总 | 整份或按模块 | 「考点要义」 | **编译连接键**（多数条目是义项级、过不了三问，归并到上位点后再写入） |
 | `question_bank` 整份试卷 / 作业册（**空白**） | **不切**——整份一条记录 + 题号索引 | 只登记「导入资料」表 | **仅覆盖标注**，见下方说明 |
-| `syllabus` 考纲 / 考试说明 | 整份 | 对学科 `_index.md` 的「高频考点」提出增删建议，**交用户确认后**才改；不自动改写静态章节 | **仅覆盖标注**，见下方说明 |
+| `syllabus` 考纲 / 考试说明（含作文评分细则） | 整份 | 对学科 `_index.md` 的「高频考点」提出增删建议，**交用户确认后**才改；不自动改写静态章节。含作文评分细则时，`essay` 按 `exam_province` 取用（见 [essay_workflow.md](essay_workflow.md) 第一节） | **仅覆盖标注**，见下方说明 |
 
 > [!IMPORTANT]
 > **`topics` 有两种身份，不要混淆**：
@@ -259,10 +259,10 @@ ingest_type: textbook          # 取值与切分单元见第 4 步的资料类�
                                # classical_text/memory_list/answer_pattern/syllabus/formula_sheet
 topics_role: compile_key       # compile_key（默认，topics 是编译连接键）
                                # coverage（仅覆盖标注，不建档不并入正文；question_bank 与 syllabus 用）
-# 以下三项仅 ingest_type: question_bank 需要
+# exam_authority 仅 question_bank 需要；exam_year、exam_province 用于 question_bank 与 syllabus
 exam_authority:                # gaokao_real / provincial_mock / school_mock / unknown
-exam_year:                     # 卷子的年份
-exam_province:                 # 卷子适用省份（全国卷填「全国甲」「新课标I」等）
+exam_year:                     # 卷子或考试说明的年份
+exam_province:                 # 适用省份（全国卷填「全国甲」「新课标I」等）；syllabus 填其适用的高考省份
 source_path: raw/sources/YYYY/MM/<原始文件名>
 reference_type:                # 参考材料时填 standard_answer/model_essay/classmate_essay，否则留空
 total_pages: [总页数]
