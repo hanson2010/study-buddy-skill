@@ -51,7 +51,7 @@ input/  →  raw/（源层：只追加，不修改）  →  编译  →  subject
 | `feedback` | 成绩反馈 | [feedback_workflow.md](references/feedback_workflow.md) | 上传成绩分析报告、单科卷面分析报告 |
 | `report` | 学情追踪 | [report_workflow.md](references/report_workflow.md) | 生成学习周报/月报、分析学习趋势 |
 | `ask` | 学情提问（只读） | [ask_workflow.md](references/ask_workflow.md) | 询问学习状况、薄弱点排序、历史错题回顾、目标差距 |
-| `maintain` | 数据维护 | [maintain_workflow.md](references/maintain_workflow.md) | 数据体检、档案清理、重新编译、全量重编、学年归档 |
+| `maintain` | 数据维护 | [maintain_workflow.md](references/maintain_workflow.md) | 数据体检、档案清理、记录更正、重新编译、全量重编、学年归档 |
 
 > **编译不是子命令**。两族编译都**隐式挂在**各写入型子命令的最后一步（[compile_subject_workflow.md](references/compile_subject_workflow.md) / [compile_admission_workflow.md](references/compile_admission_workflow.md)），用户无需也无法单独触发；只有重编（重新编译单一学科/目标，或全量重编）需要经由 `maintain`。
 >
@@ -82,8 +82,8 @@ input/  →  raw/（源层：只追加，不修改）  →  编译  →  subject
 1. **日期口径统一取事件日期**：路径与文件名的日期取资料本身的事件日期（试卷/作业/考试日期），导入日期只记入 frontmatter 的 `ingested_at`、不参与路径；同一份材料的 `raw/sources/`、`raw/notes/` 路径与文件名日期前缀必须落在同一个 `YYYY/MM`。
 2. **原始资料存储规则**：任何上传资料一律先以原文件名存入 `raw/sources/YYYY/MM/`（撞名加数字后缀），处理结果通过 `source_path` 引用该路径。
 3. **源层与编译层分离（不变式）**：`raw/` 只追加不改写；`subjects/`、`colleges/` 下的档案与索引只允许由编译生成，且必须能从 `raw/` 完整重建；编译层严禁出现按年月分的日期目录。
-4. **编译连接键必填**：学科资料的 frontmatter 须含 `subject` 与**数组** `topics`；升学资料须含 `doc_type: admission_data` 与 `scope`（`entity` 至少标一个实体，`bulk` 保留完整表格）；缺失会被编译静默漏掉，属严重缺陷（详见 [compile_subject_workflow.md](references/compile_subject_workflow.md)）。写入 `topics` 前须过**建档粒度三问**——不可过大（是 theme 就下沉）、不可过小且无发展余地（是义项/步骤/特例就并入上位点）、不可重复（先查学科知识点索引，再查 [topic_vocabulary.md](templates/topic_vocabulary.md) 受控词表）；判据管粒度与唯一性，不管来源，`ingest` 同样可以建档（详见 [topic_templates.md](templates/topic_templates.md) 第一节）。例外：题源（空白试卷）与考纲本身不承载知识内容，标 `topics_role: coverage`，其 `topics` 只作覆盖标注、不建档。
-5. **加工文件更新建新文件**：`raw/notes/` 下的记录如需更新，一律新建日期文件而非编辑旧文件，写入后立即触发对应知识点的增量编译。
+4. **编译连接键必填**：学科资料的 frontmatter 须含 `subject` 与**数组** `topics`；作答记录（`eval`/`learn`/`classical`）另须含逐题 `items[]`，否则掌握判定没有输入；升学资料须含 `doc_type: admission_data` 与 `scope`（`entity` 至少标一个实体，`bulk` 保留完整表格）；缺失会被编译静默漏掉，属严重缺陷（详见 [compile_subject_workflow.md](references/compile_subject_workflow.md)）。写入 `topics` 前须过**建档粒度三问**——不可过大（是 theme 就下沉）、不可过小且无发展余地（是义项/步骤/特例就并入上位点）、不可重复（先查学科知识点索引，再查 [topic_vocabulary.md](templates/topic_vocabulary.md) 受控词表）；判据管粒度与唯一性，不管来源，`ingest` 同样可以建档（详见 [topic_templates.md](templates/topic_templates.md) 第一节）。例外：题源（空白试卷）与考纲本身不承载知识内容，标 `topics_role: coverage`，其 `topics` 只作覆盖标注、不建档。
+5. **加工文件更新建新文件**：`raw/notes/` 下的记录如需更新，一律新建替代记录（`supersedes` 指向旧记录）而非编辑旧文件，写入后立即触发对应知识点的编译（详见 [maintain_workflow.md](references/maintain_workflow.md) 的「记录更正」）。
 6. **参考材料隔离**：标准答案/范文等经 `reference_type` 标识后存入 `raw/notes/`；不进入错因史与正确率统计，但**应当**编译进知识点档案的「考点要义」与「已用资源」（详见 [ingest_subject_workflow.md](references/ingest_subject_workflow.md)）。
 7. **掌握判定必须带证据强度**：作答按来源分 `exam > homework > generated`；仅 `generated` 证据不得判为「✅ 已掌握」，最高到「🟡 疑似掌握」；复习优先级按 `错误次数 × 时间衰减 ÷ 证据强度` 排序（详见 [compile_subject_workflow.md](references/compile_subject_workflow.md) 第五节）。
 8. **本地索引优先检索**：检索顺序固定为 Root `_index.md` → 学科 `_index.md` / `colleges/_index.md` → `subjects/<学科>/topics/` / `colleges/groups/`、`majors/` → `raw/notes/` → `raw/sources/`，命中即停；全部本地层级找不到才联网。第 2、3 层各有**学科与升学两条并行分支**，按问题所属领域选一条即可（完整表述见 [ask_workflow.md](references/ask_workflow.md) 第二节）。
@@ -215,6 +215,7 @@ input/  →  raw/（源层：只追加，不修改）  →  编译  →  subject
 数据目录会随使用漂移（索引与档案不一致、引用失效、缺字段等），需要定期体检；跨学年的旧数据需要归档以免污染当前检索。详细规则见 [references/maintain_workflow.md](references/maintain_workflow.md)。
 
 - **数据体检**：只报告问题清单与建议修复，**不自动改写学生数据**
+- **记录更正**：记录写错时追加一条 `supersedes` 替代记录，旧记录不动，受影响知识点自动重放
 - **重新编译**：从 `raw/` 重建**单一学科**或**单一升学目标**的档案与索引，其余范围不受影响；问题集中在一处时优先用这个，成本远低于全量重编
 - **全量重编**：删除并从 `raw/` 完整重建 `subjects/` 与 `colleges/` 下的**全部**档案与索引，仅用于跨学科/目标的问题或编译规则变更
 - **学年归档**：将旧学年的 `raw/` 子树移入 `archive/<学年>/`，知识点档案保留全量历史
@@ -417,15 +418,15 @@ input/  →  raw/（源层：只追加，不修改）  →  编译  →  subject
 
 - **流转逻辑**：
   ```
-  由 ingest 建档、尚无任何作答（错误次数=0） → 📘 已学未测
-  首次作答错误（错误次数=1） → ⚠️ 待巩固
-  连续 3 次答对 + evidence_strength ≥ medium → ✅ 已掌握
-  连续 3 次答对 但 evidence_strength = low   → 🟡 疑似掌握（待考试验证，仍进复习队列）
-  已掌握后再次答错 → ⚠️ 待巩固（错误次数重置为 1，证据强度按新证据重算）
-  超过阈值未复习 → ⚠️ 待巩固（阈值按证据强度分级，见下）
+  作答序列为空                                     → 📘 已学未测
+  correct_streak ≥ 3 且 evidence_strength ≥ medium → ✅ 已掌握
+  correct_streak ≥ 3 且 evidence_strength = low    → 🟡 疑似掌握（待考试验证，仍进复习队列）
+  其余（有作答，但 correct_streak < 3）            → ⚠️ 待巩固
+  ✅ / 🟡 超过遗忘阈值未复习                        → ⚠️ 待巩固（读取时判定，见下）
   ```
-- **证据强度**：`source_type` 优先级为 `exam` > `homework` > `generated`；`evidence_strength` 取历次正确作答中的最强来源——含 ≥1 次 `exam` 为 `high`，仅含 `homework` 为 `medium`，仅含 `generated` 为 `low`；**完全没有作答记录时留空**（📘 已学未测），不写 `low`。
-- **遗忘机制（按证据强度分级）**：`low` 30 天、`medium` 60 天、`high`（含 exam 证据）**不自动降级**（只在报告中标注"距上次接触 N 天"）、📘 已学未测不参与。一刀切 30 天会在高三一轮复习期把全部档案灌进待巩固队列，让优先级排序失效；证据越强，遗忘提醒越不该抢占注意力。
+- **作答序列**：状态、`error_count`、`correct_streak`、`last_reviewed` 等全部由该知识点的作答序列推出——作答记录逐题写 `items[]`（含做对的题），编译按时间展开（详见 [compile_subject_workflow.md](references/compile_subject_workflow.md) 第五节第 0 点）。`error_count` **累计、永不重置**，等于错因史行数。
+- **证据强度**：`source_type` 优先级为 `exam` > `homework` > `generated`；`evidence_strength` 取**当前连续答对段**中的最强来源——含 ≥1 次 `exam` 为 `high`，仅含 `homework` 为 `medium`，仅含 `generated` 或最近一次答错为 `low`；**完全没有作答记录时留空**（📘 已学未测），不写 `low`。
+- **遗忘机制（按证据强度分级）**：`low` 30 天、`medium` 60 天、`high`（含 exam 证据）**不自动降级**（只在报告中标注"距上次接触 N 天"）、📘 已学未测不参与。一刀切 30 天会在高三一轮复习期把全部档案灌进待巩固队列，让优先级排序失效；证据越强，遗忘提醒越不该抢占注意力。降级与优先级的时间衰减都是时间的函数，由读取方按当天判定，不写入档案。
 - **档案类型 `topic_kind`（三档）**：`problem_solving`（默认）／`memory_item`（古诗文篇目、必背清单）／`answer_pattern`（答题规范型考点、作文能力点）。它决定正文第二段的形态与复习机制，**不改变掌握判定口径**（详见 [templates/topic_templates.md](templates/topic_templates.md) 第七节）。
 - **间隔重复只用于 `memory_item`**：1/3/7/14/30 天，`next_review` 是驱动字段（`learn` 的「今天该复习什么」按它取项）；其余两档**不设固定间隔**，由复习优先级公式排队——机械刷间隔既排不出优先级，也无法判定"这一轮算不算复习过"。
 - **复习优先级**：按 `错误次数 × 时间衰减 ÷ 证据强度` 排序，证据越弱越应优先复习，不得只按错误次数排序。

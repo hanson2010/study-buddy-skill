@@ -68,8 +68,8 @@ topic_kind: problem_solving      # problem_solving（默认）/ memory_item / an
 theme: 函数与导数                # 对应学科 _index.md 的「高频主题」
 status: 待巩固                   # 已学未测 / 待巩固 / 疑似掌握 / 已掌握
 evidence_strength: medium        # high / medium / low；已学未测时留空
-error_count: 3                   # 累计错误次数
-correct_streak: 0                # 当前连续答对次数
+error_count: 3                   # 累计错误作答次数，永不重置（= 第二段行数）
+correct_streak: 0                # 作答序列末尾的连续答对次数
 prerequisites:                   # 前置知识点（诊断时向上追溯一层）
   - 函数单调性
   - 导数的几何意义
@@ -77,7 +77,7 @@ related:                         # 平级相关知识点
   - 零点问题
 first_seen: 2026-05-12           # 首次出现日期
 last_error: 2026-07-12           # 最近错误日期
-last_reviewed: 2026-07-28        # 最近复习日期（遗忘降级按证据强度分级，以此计算）
+last_reviewed: 2026-07-28        # 最近一次作答（不论对错）的日期；遗忘降级以此计算
 next_review:                     # 仅 topic_kind: memory_item 使用（间隔重复推算）；本例是 problem_solving，故留空
 review_round:                    # 同上，仅 memory_item 使用
 sources:                         # 编译自哪些 raw/notes/ 记录，全部可回溯
@@ -98,10 +98,10 @@ sources:                         # 编译自哪些 raw/notes/ 记录，全部可
 | `theme` | ✅ | 归属的高频主题，用于报告按主题聚合 |
 | `status` | ✅ | 由编译按状态流转规则计算，不手工设置。由 `ingest` 建档且尚无作答时为 `已学未测` |
 | `evidence_strength` | ✅ | 由编译按 `source_type` 取最强来源计算；**完全无作答记录时留空**，不写 `low` |
-| `error_count` / `correct_streak` | ✅ | 由编译重算，不做增量累加 |
+| `error_count` / `correct_streak` | ✅ | 由编译从作答序列推出，不做增量累加（见 [compile_subject_workflow.md](../references/compile_subject_workflow.md) 第五节第 0 点）。`error_count` 永不重置 |
 | `prerequisites` | 建议 | 初始骨架可从 [topic_vocabulary.md](topic_vocabulary.md) 同 `theme` 内的上游条目派生；无法判断时留空，随使用增补 |
 | `related` | 可选 | 平级关联，用于交叉推荐 |
-| `first_seen` / `last_error` / `last_reviewed` | ✅ | 全部取**事件日期**（核心规则 1） |
+| `first_seen` / `last_error` / `last_reviewed` | ✅ | 全部取**事件日期**（核心规则 1）；`last_error` 与 `last_reviewed` 分别是作答序列中最近一次错误作答与最近一次作答的日期 |
 | `next_review` / `review_round` | 仅 `memory_item` | 间隔重复推算（1/3/7/14/30 天）。**`problem_solving` 与 `answer_pattern` 必须留空**——它们由复习优先级公式排队，不走固定间隔（见第七节） |
 | `sources` | ✅ | 相对路径数组，去重。已归档记录写 `archive/<学年>/raw/notes/...` 并标注 |
 
@@ -162,7 +162,7 @@ sources:                         # 编译自哪些 raw/notes/ 记录，全部可
 | 章节 | 数据来源 | 禁止事项 |
 |------|----------|----------|
 | **考点要义** | `ingest` 资料记录、`learn` 学习记录、参考材料（`reference_type` 非空） | 禁止模型自由发挥；`raw/` 中确无资料时才补写通用表述，并标注「（暂无本地资料，以下为通用表述）」。**100–200 字**；**禁止占位符**（「待编译」「待补充」等）——写不出实质结论即证明三问没过，该并入上位点而非建空壳档案（`memory_item` 下限放宽到 50 字，实质内容在「原文与注释」段） |
-| **第二段**（形态随 `topic_kind`，见第七节） | `eval` 错题、`feedback` 卷面分析（取 `knowledge_points[].wrong_questions[]`，逐题展开）、`essay` 作文薄弱点、`classical` 默写/翻译错误 | **参考材料不得进入本段**；`problem_solving` 不得省略「是否重复」列；`feedback` 的 `wrong_questions` 为空时不生成行，不得反推 |
+| **第二段**（形态随 `topic_kind`，见第七节） | `eval` 错题、`feedback` 卷面分析（取 `knowledge_points[].wrong_questions[]`，逐题展开）、`essay` 作文薄弱点、`classical` 默写/翻译错误 | **参考材料不得进入本段**；`problem_solving` 不得省略「是否重复」列；每行恰好对应一次错误作答；`feedback` 得分率 < 80% 而 `wrong_questions` 为空时生成一行、错因写「未知」，不得反推 |
 | **已用资源** | `learn`/`eval` 的 `videos[]` 与练习记录（`learn` 的 `exercise_count`/`correct_rate`），参考材料 | 视频推荐前必须先读本节，避免重复推荐；两个来源的 `videos` 字段结构一致，逐条抽取见 [compile_subject_workflow.md](../references/compile_subject_workflow.md) 第四节第 3 点 |
 | **下一步** | 错因假设验证机制、前置知识点状态、间隔重复推算（**仅 `memory_item`**） | 无待办时写「暂无待办」，不留空章节 |
 
@@ -199,8 +199,8 @@ sources:                         # 编译自哪些 raw/notes/ 记录，全部可
 
 | 标记 | 含义 | 判定条件 |
 |------|------|----------|
-| 📘 已学未测 | 已建档但从没作答过 | `error_count = 0` 且无任何作答记录（档案由 `ingest` 导入资料时建立） |
-| ⚠️ 待巩固 | 存在未解决的错误 | 错误次数 ≥1 且未达连续 3 次答对；或超过遗忘降级阈值未复习（阈值按证据强度分级，见 [compile_subject_workflow.md](../references/compile_subject_workflow.md) 第五节第 3 点） |
+| 📘 已学未测 | 已建档但从没作答过 | 作答序列为空（档案由 `ingest` 导入资料时建立） |
+| ⚠️ 待巩固 | 尚未达到掌握标准 | 有作答但连续答对不足 3 次；或 ✅/🟡 超过遗忘降级阈值未复习（读取时判定，阈值按证据强度分级，见 [compile_subject_workflow.md](../references/compile_subject_workflow.md) 第五节第 3 点） |
 | 🟡 疑似掌握 | 答对了但证据不足 | 连续 3 次答对，但 `evidence_strength: low`（仅技能内生成的练习） |
 | ✅ 已掌握 | 确认掌握 | 连续 3 次答对且 `evidence_strength ≥ medium` |
 

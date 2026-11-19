@@ -136,7 +136,7 @@
 date: YYYY-MM-DD              # 事件日期（作文日期），决定目录与文件名
 ingested_at: YYYY-MM-DD       # 导入日期，仅作审计，不参与路径
 subject: 语文
-topics:                        # 必填数组：本篇暴露的写作知识点，与下方 weak_points 对应
+topics:                        # 必填数组：本篇批改评价到的全部写作知识点（含达标的）；编译按是否在 weak_points 中判对错
   - 作文审题
   - 论证方法
 source_type: homework          # exam（考场作文）/ homework（平时作文）/ generated
@@ -160,7 +160,7 @@ grading:  # 按 essay_scope 二选一
   #   理由充分且多角度: [达成/部分达成/未达成]
   #   认识有深度: [达成/部分达成/未达成]
 grade_level: [一类文/二类文/三类文/四类文]
-weak_points:
+weak_points:                   # 本篇失分的知识点，名称须与 topics 中的条目一致（是其子集）；在其中 → 一次错误作答，不在 → 一次正确作答
   - [薄弱点1]
   - [薄弱点2]
 ---

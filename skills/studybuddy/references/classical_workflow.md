@@ -79,6 +79,12 @@ difficulty: [基础/提高/挑战]
 learning_progress: [背诵/理解/鉴赏/应用]
 source_type: generated         # 本工作流的默写检测一律为 generated；来自作业/考试的默写标 homework/exam
 source_path:  # 原始资料路径（如有），如 raw/sources/YYYY/MM/photo.jpg
+items:                         # 必填（有默写/翻译/鉴赏检测时）：每次检测一项，全对也要列；编译据此推出作答序列与间隔重复轮次
+  - form: 全篇默写              # 全篇默写/名句填空/补句/翻译/鉴赏
+    topics: [登高, 默写准确性]   # 本项检测命中的篇目与能力点，须是上方 topics 的子集
+    correct: false
+    error_type: 错字            # 仅 correct: false 时填：篇目用 错字/漏句/顺序错/想不起来；能力点用四分类
+    summary: 「潦倒」写成「僚倒」   # 仅 correct: false 时填，具体到字句
 ---
 ```
 
@@ -140,7 +146,7 @@ source_path:  # 原始资料路径（如有），如 raw/sources/YYYY/MM/photo.j
 - **考点要义**：作品的主旨、艺术手法要点
 - **回忆记录**（第二段）：本次默写的形式（全篇/填空/补句）、结果、**具体错在哪几个字或哪一句**
 - **原文与注释**（追加段）：全文与关键字词释义，让下次默写检测无需回翻 `raw/notes/`
-- **间隔重复**：按回忆结果推算 `next_review`——全对进下一轮（1/3/7/14/30 天），有错字回退一轮，连错两次回到第 1 轮（规则见 compile_subject_workflow.md 第五节第 4 点）
+- **间隔重复**：编译按 `items[]` 中的回忆结果推算 `review_round` 与 `next_review`——全对进下一轮（1/3/7/14/30 天），有错字回退一轮，连错两次回到第 1 轮（规则见 compile_subject_workflow.md 第五节第 4 点）
 
 **两类共同**：
 
@@ -149,7 +155,7 @@ source_path:  # 原始资料路径（如有），如 raw/sources/YYYY/MM/photo.j
 
 ### 更新时机
 - **每次学习后**：写入记录并触发编译
-- **每次默写检测后**：按检测结果重算状态与证据强度
+- **每次默写检测后**：把检测结果逐项写进新记录的 `items[]`，由编译重算状态与证据强度
 
 ---
 
