@@ -171,7 +171,7 @@ input/  →  raw/（源层：只追加，不修改）  →  编译  →  subject
 
 ### 6. 语文作文批改
 
-语文作文批改不套用通用的「难题破解五步法」，走独立流程。详细规则见 [references/essay_workflow.md](references/essay_workflow.md)。
+语文作文批改不套用通用的「智能辅导六步法」，走独立流程。详细规则见 [references/essay_workflow.md](references/essay_workflow.md)。
 
 - **评分标准**：按北京卷两种题型评分——大作文 50 分（不少于 700 字，一类文 42-50）、微写作 10 分（不超过 150 字，一类文 8-10）；输出「得分/满分」与档位，不得只给裸分（评分细则见 essay_workflow.md）
 - **批改流程**：审题分析 → 分项评分 → 问题诊断 → 升格建议 → 范文对照 → 片段练习
