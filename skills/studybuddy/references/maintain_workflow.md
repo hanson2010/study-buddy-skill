@@ -56,11 +56,11 @@
 | 2.4 | 每条作答记录是否有 `source_type` | 缺失导致证据强度算错 | 中 |
 | 2.5 | 是否有 `ingested_at` | 缺失只影响审计，不影响功能 | 低 |
 | 2.6 | `doc_type: admission_data` 的记录是否有 `scope` | **无法判断取数方式**（枚举还是查表），整条记录对编译失效 | 高 |
-| 2.9 | `ingest_type: question_bank` / `syllabus` 的记录是否标了 `topics_role: coverage` | 漏标会让题源里的知识点被误建成档案（多为孤儿档案），或触发 1.2 误报 | 中 |
-| 2.10 | 作答记录（`eval`、`learn` 含练习、`classical` 含检测）是否有 `items`，且每项的 `topics` 都在记录 `topics` 中 | 缺 `items` 则该记录不产生任何作答，档案状态与错误次数都会算错（见 [compile_subject_workflow.md](compile_subject_workflow.md) 第五节第 0 点） | 高 |
-| 2.10 | `ingest_type: question_bank` 的记录是否有 `exam_authority`、`exam_year`、`exam_province` | 缺 `exam_authority` 无法判断这份卷子能否作为考点分布证据；缺年份省份会导致跨省跨年混用 | 低 |
 | 2.7 | 升学记录是否有 `credibility` | 缺失则无法执行就业数据分级（与 5.8 互补：5.8 查档案侧是否混入 `questionable`，本项查记录侧是否根本没标） | 中 |
 | 2.8 | `scope: bulk` 记录是否有 `province` 与 `year` | 缺 `province` 无法与高考省份匹配，缺 `year` 无法做超期提示 | 中 |
+| 2.9 | `ingest_type: question_bank` / `syllabus` 的记录是否标了 `topics_role: coverage` | 漏标会让题源里的知识点被误建成档案（多为孤儿档案），或触发 1.2 误报 | 中 |
+| 2.10 | `ingest_type: question_bank` 的记录是否有 `exam_authority`、`exam_year`、`exam_province` | 缺 `exam_authority` 无法判断这份卷子能否作为考点分布证据；缺年份省份会导致跨省跨年混用 | 低 |
+| 2.11 | 作答记录（`eval`、`learn` 含练习、`classical` 含检测）是否有 `items`，且每项的 `topics` 都在记录 `topics` 中 | 缺 `items` 则该记录不产生任何作答，档案状态与错误次数都会算错（见 [compile_subject_workflow.md](compile_subject_workflow.md) 第五节第 0 点） | 高 |
 
 > 2.1–2.5 针对学科记录，2.6–2.8 针对升学记录；两族的必填字段不同，不要用学科口径去查升学记录（它本来就没有 `subject`/`topics`）。
 
@@ -112,15 +112,15 @@
 |---|------|------|--------|
 | 6.1 | 是否有档案的 `sources` 中含 `ingest` 类记录、「考点要义」却为空 | **新建时的单知识点重放没跑**（增量编译步骤 3）。若压根没有 `ingest` 来源，则只是提示可导入教材资料补齐，严重度降为低 | 中 |
 | 6.2 | 是否有超过**分级阈值**未复习、却仍为「🟡 疑似掌握」或「✅ 已掌握」的知识点 | 阈值按证据强度：`low` 30 天、`medium` 60 天、`high` 不降级（见 [compile_subject_workflow.md](compile_subject_workflow.md) 第五节第 3 点）。**📘 已学未测不在本项范围内** | 中 |
-| 6.8 | `topic_kind: memory_item` 的档案是否有 `next_review`；其余两档的 `next_review` 是否已留空 | 前者缺失说明间隔重复没跑起来，后者有值说明把固定日程误用到了解题型知识点上 | 中 |
-| 6.9 | 是否有 `next_review` 已过期超过 14 天的 `memory_item` | 复习清单一直没被执行，提示用户该背了 | 低 |
-| 6.10 | 档案的 `topic_kind` 是否为三档枚举之一，且正文第二段的形态与之匹配 | 第二段用错模板（如给篇目档案写「个人错因史」），或出现第四种取值 | 中 |
 | 6.3 | 是否有错误次数 ≥3 但「下一步」无错因假设的档案 | 未触发错因假设验证 | 低 |
 | 6.4 | 是否有档案 `prerequisites` 为空 | 提示可补全前置关系 | 低 |
 | 6.5 | 档案 slug 是否违反命名约束 | 含数字后缀、日期、题号、`topic-*`/`item-*`/`untitled` 占位名、超 3 段纯拼音（禁止形态见 [topic_templates.md](../templates/topic_templates.md) 第一节第 2 小节）。这类名字说明建档时粒度三问没过 | 中 |
-| 6.11 | 档案的 `topic` 中文名在 [topic_vocabulary.md](../templates/topic_vocabulary.md) 中存在同义条目、但 slug 与词表不一致 | 同一知识点被起了两个名字，错因史会被劈成两半——这是词表要防的首要问题 | 中 |
 | 6.6 | **孤儿档案**：无任何作答证据（`error_count = 0` 且无练习记录）且「考点要义」不足 100 字 | 粒度过小或提取过碎的产物，建议合并到上位知识点或删除。注意与正常的 📘 已学未测区分——后者「考点要义」是充实的，只是还没测 | 中 |
 | 6.7 | 档案 `status` 为 📘 已学未测，但 `error_count > 0` 或存在作答记录 | 状态未随首次作答流转 | 中 |
+| 6.8 | `topic_kind: memory_item` 的档案是否有 `next_review`；其余两档的 `next_review` 是否已留空 | 前者缺失说明间隔重复没跑起来，后者有值说明把固定日程误用到了解题型知识点上 | 中 |
+| 6.9 | 是否有 `next_review` 已过期超过 14 天的 `memory_item` | 复习清单一直没被执行，提示用户该背了 | 低 |
+| 6.10 | 档案的 `topic_kind` 是否为三档枚举之一，且正文第二段的形态与之匹配 | 第二段用错模板（如给篇目档案写「个人错因史」），或出现第四种取值 | 中 |
+| 6.11 | 档案的 `topic` 中文名在 [topic_vocabulary.md](../templates/topic_vocabulary.md) 中存在同义条目、但 slug 与词表不一致 | 同一知识点被起了两个名字，错因史会被劈成两半——这是词表要防的首要问题 | 中 |
 
 ### 输出格式
 

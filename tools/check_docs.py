@@ -62,6 +62,31 @@ RE_LEGACY_SUBJECT_PATH = re.compile(r"subjects/[^/\s`）、，。]+/(?:YYYY|\d{4
 RE_LEGACY_COLLEGE_PATH = re.compile(r"colleges/(?:YYYY|\d{4})\b[\w/<>-]*")
 RE_TOPIC_SINGULAR = re.compile(r"^\s*topic:\s")
 
+# 遗忘降级阈值按证据强度分级（low 30 / medium 60 / high 不降级），不得退回一刀切 30 天
+RE_FLAT_FORGET = re.compile(r"30\s*天\s*(?:未复习|遗忘降级|降级)")
+FLAT_FORGET_EXEMPT = "一刀切"  # 描述被废弃旧规则的句子
+# error_count 累计、永不重置
+RE_COUNT_RESET = re.compile(r"(?:错误次数|error_count`?)[^。；\n]{0,12}重置为")
+# 体检检查项：maintain_workflow.md 中「#### N. …」小节下的「| N.M |」表格行
+HEALTH_FILE = "skills/studybuddy/references/maintain_workflow.md"
+RE_HEALTH_GROUP = re.compile(r"^####\s*(\d+)\.")
+RE_HEALTH_ROW = re.compile(r"^\|\s*(\d+)\.(\d+)\s*\|")
+RE_HEALTH_REF = re.compile(r"体检[^0-9|\n]{0,4}?(\d+\.\d+)|\[(\d+\.\d+)\]")
+# 子命令表：SKILL.md 与 README.md 各一份，命令集合与「功能」列必须一致
+SUBCOMMAND_TABLES = {
+    "skills/studybuddy/SKILL.md": "子命令体系",
+    "README.md": "子命令使用",
+}
+RE_SUBCOMMAND_ROW = re.compile(r"^\|\s*`(\w+)`\s*\|\s*([^|]+?)\s*\|")
+RE_SUBCOMMAND_COUNT = re.compile(r"提供\s*(\d+)\s*个")
+# 作答记录必须逐题写 items[]，否则掌握判定没有输入
+ANSWER_RECORD_FILES = [
+    "skills/studybuddy/references/eval_workflow.md",
+    "skills/studybuddy/references/learn_workflow.md",
+    "skills/studybuddy/references/classical_workflow.md",
+]
+RE_ITEMS_KEY = re.compile(r"^\s*items:")
+
 CANONICAL_LOG_PATH = "output/YYYY/MM/YYYY-MM-DD-log.md"
 CANONICAL_RAW_PATHS = ("raw/sources/YYYY/MM/", "raw/notes/YYYY/MM/")
 # 目录树里单独出现的节点，不是完整路径
@@ -183,7 +208,7 @@ def check_section_numbering(path: Path, lines, f: Findings) -> None:
 
 
 def check_subject_enum(path: Path, lines, f: Findings) -> None:
-    """3. subject: 只能取六个学科中文名（模板占位符除外）。"""
+    """3. subject: 只能取九个学科中文名（模板占位符除外）。"""
     for num, line, _ in lines:
         m = RE_SUBJECT.match(line)
         if not m:
@@ -192,7 +217,7 @@ def check_subject_enum(path: Path, lines, f: Findings) -> None:
         if value in SUBJECTS or value in SUBJECT_PLACEHOLDERS or not value:
             continue
         f.add("subject 取值", path, num,
-              f"subject 取值「{value}」不在六科枚举内；非学科文档请改用 doc_type")
+              f"subject 取值「{value}」不在九科枚举内；非学科文档请改用 doc_type")
 
 
 def check_source_keys(path: Path, lines, f: Findings) -> None:
@@ -276,6 +301,111 @@ def check_platform_urls(files: list[Path], f: Findings) -> None:
                       f"「{name}」出现多个不同域名，其一为 {host}")
 
 
+def check_state_rules(path: Path, lines, f: Findings) -> None:
+    """9. 状态判定口径不得回潮：遗忘阈值分级、error_count 不重置。
+
+    这两条曾在多份文件里各自漂移，agent 会照着过时的那份执行。
+    """
+    for num, line, _ in lines:
+        if RE_FLAT_FORGET.search(line) and FLAT_FORGET_EXEMPT not in line:
+            f.add("判定口径", path, num,
+                  "一刀切的 30 天遗忘降级；阈值按证据强度分级，应引用 compile_subject_workflow.md 第五节第 3 点")
+        if RE_COUNT_RESET.search(line):
+            f.add("判定口径", path, num,
+                  "error_count 累计、永不重置（见 compile_subject_workflow.md 第五节第 0 点）")
+
+
+def check_health_items(files: list[Path], f: Findings) -> None:
+    """10. 体检检查项编号：组号与所在小节一致、组内递增不重复；文中引用的编号必须存在。"""
+    health = ROOT / HEALTH_FILE
+    if not health.exists():
+        return
+    defined: set[str] = set()
+    group = None
+    last: tuple[int, int] | None = None
+    for num, line, in_fence in iter_lines(health.read_text(encoding="utf-8")):
+        if in_fence:
+            continue
+        m = RE_HEALTH_GROUP.match(line)
+        if m:
+            group, last = int(m.group(1)), None
+            continue
+        if line.startswith("#"):
+            group, last = None, None
+            continue
+        m = RE_HEALTH_ROW.match(line)
+        if not m or group is None:
+            continue
+        key = (int(m.group(1)), int(m.group(2)))
+        ident = f"{key[0]}.{key[1]}"
+        if key[0] != group:
+            f.add("体检编号", health, num, f"{ident} 位于第 {group} 组小节下")
+        if ident in defined:
+            f.add("体检编号", health, num, f"{ident} 重复定义")
+        elif last is not None and key < last:
+            f.add("体检编号", health, num, f"{ident} 排在 {last[0]}.{last[1]} 之后，组内应按编号递增")
+        defined.add(ident)
+        last = key
+    for path in files:
+        for num, line, _ in iter_lines(path.read_text(encoding="utf-8")):
+            for a, b in RE_HEALTH_REF.findall(line):
+                ident = a or b
+                if ident not in defined:
+                    f.add("体检编号", path, num, f"引用了不存在的体检项 {ident}")
+
+
+def check_subcommand_tables(f: Findings) -> None:
+    """11. SKILL.md 与 README.md 的子命令表：命令集合、「功能」列与声明的个数一致。"""
+    tables: dict[str, dict[str, tuple[str, int]]] = {}
+    for rel, heading in SUBCOMMAND_TABLES.items():
+        path = ROOT / rel
+        if not path.exists():
+            continue
+        rows: dict[str, tuple[str, int]] = {}
+        counts: list[tuple[int, int]] = []  # (声明的个数, 行号)
+        inside = False
+        for num, line, in_fence in iter_lines(path.read_text(encoding="utf-8")):
+            if in_fence:
+                continue
+            if line.startswith("#"):
+                inside = heading in line
+                continue
+            if not inside:
+                continue
+            m = RE_SUBCOMMAND_ROW.match(line)
+            if m:
+                rows[m.group(1)] = (m.group(2), num)
+            m = RE_SUBCOMMAND_COUNT.search(line)
+            if m and "子命令" in line:
+                counts.append((int(m.group(1)), num))
+        tables[rel] = rows
+        for declared, num in counts:
+            if declared != len(rows):
+                f.add("子命令表", path, num, f"声明 {declared} 个子命令，表中实际 {len(rows)} 个")
+    if len(tables) != 2:
+        return
+    (ra, a), (rb, b) = tables.items()
+    for cmd in sorted(set(a) | set(b)):
+        if cmd not in a or cmd not in b:
+            missing, present = (ra, rb) if cmd not in a else (rb, ra)
+            f.add("子命令表", ROOT / present, (a.get(cmd) or b.get(cmd))[1],
+                  f"`{cmd}` 不在 {missing} 的子命令表中")
+        elif a[cmd][0] != b[cmd][0]:
+            f.add("子命令表", ROOT / rb, b[cmd][1],
+                  f"`{cmd}` 的功能列「{b[cmd][0]}」与 {ra} 的「{a[cmd][0]}」不一致")
+
+
+def check_answer_items(f: Findings) -> None:
+    """12. 作答记录的 frontmatter 模板必须含 items:（逐题对错，作答序列的唯一来源）。"""
+    for rel in ANSWER_RECORD_FILES:
+        path = ROOT / rel
+        if not path.exists():
+            continue
+        if not any(in_fence and RE_ITEMS_KEY.match(line)
+                   for _, line, in_fence in iter_lines(path.read_text(encoding="utf-8"))):
+            f.add("作答记录", path, 1, "frontmatter 模板缺少 items:，编译无法推出作答序列")
+
+
 def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
@@ -295,7 +425,11 @@ def main() -> int:
         check_paths(path, lines, f)
         check_compile_layer(path, lines, f)
         check_topics_key(path, lines, f)
+        check_state_rules(path, lines, f)
     check_platform_urls(files, f)
+    check_health_items(files, f)
+    check_subcommand_tables(f)
+    check_answer_items(f)
 
     print(f"check_docs: 已检查 {len(files)} 个文件。")
     return f.report()
